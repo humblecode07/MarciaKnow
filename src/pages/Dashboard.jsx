@@ -3,9 +3,9 @@ import CampusMap from '../assets/CampusMap'
 
 const Dashboard = () => {
   return (
-    <>
-      a
-    </>
+    <div>
+      
+    </div>
   )
 }
 
