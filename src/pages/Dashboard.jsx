@@ -1,5 +1,5 @@
 import React from 'react'
-import CampusMap from '../assets/CampusMap'
+import CampusMap from '../components/TestKiosk/CampusMap'
 
 const Dashboard = () => {
   return (

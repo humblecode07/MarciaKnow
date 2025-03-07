@@ -1,47 +1,16 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import LeftSidePanel from '../../components/TestKiosk/LeftSidePanel';
+import RightSidePanel from '../../components/TestKiosk/RightSidePanel';
+import CampusMap from '../../components/TestKiosk/CampusMap';
 
 const TestKiosk = () => {
-  const svgRef = useRef(null);
-
   return (
-    <div className='flex ml-[16rem]'>
-      <svg width="956" height="791" viewBox="0 0 956 791" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="956" height="791" fill="#E2D7BA" fill-opacity="0.5" />
-        <path d="M409.19 771.5H334.5V748H337.874H338.374V747.5V589V588.5H337.874H306V499.5H377.5H378V499V441.5H472V556V556.5H472.5H515.694L409.19 771.5Z" stroke="black" />
-        <path d="M698.173 411.289L749.711 312.177L828.329 353.711L777.286 452.823L698.173 411.289Z" stroke="black" />
-        <path d="M647.668 384.288L698.216 284.68L748.327 311.21L696.789 410.322L647.668 384.288Z" stroke="black" />
-        <path d="M370 416V434H193.5V322.999L370 322.501V341.5V342H370.5H421.5V415.5H370.5H370V416Z" stroke="black" />
-        <path d="M533.099 395.858L541.362 418.215L486.468 439.975L458.367 432.58L429.151 361.766L448.982 353.306L533.099 395.858Z" stroke="black" />
-        <path d="M917.337 468.244L825.757 666.833L741.662 627.259L833.029 429.164L917.337 468.244Z" stroke="black" />
-        <path d="M711.453 621.211L802.24 426.667L820.34 435.241L731.045 630.292L730.841 630.739L731.285 630.951L774.844 651.741L764.256 675.322L679.176 633.276L690.224 611.66L710.785 621.451L711.24 621.668L711.453 621.211Z" stroke="black" />
-        <path d="M671.789 635.827L508.708 551.304L520.426 532.262L520.697 531.821L520.247 531.565L491.673 515.308L510.708 480.167L702.322 577.716L671.789 635.827Z" stroke="black" />
-        <path d="M485.673 299.288L537.212 199.677L698.331 284.713L647.783 384.322L485.673 299.288Z" stroke="black" />
-        <path d="M132.171 85.7898L172.213 8.17853L536.428 201.21L496.288 278.822L132.171 85.7898Z" stroke="black" />
-        <path d="M101.504 780.06L90.0001 780.06L90.5 688L150 634.5L157.5 627L159.243 625.19C166.589 617.562 171.555 607.961 173.537 597.558V597.558C174.177 594.194 174.5 590.776 174.5 587.351L174.5 321.707C174.5 317.846 176.489 314.257 179.763 312.211V312.211C181.551 311.093 183.619 310.503 185.727 310.508L377 311L535.5 391.5L533 396" stroke="black" />
-        <path d="M131.944 85.5365L180.366 111.23C166.239 145.598 132.149 167.518 94.9862 166.08L80.5 165.519V100.376L131.944 85.5365Z" stroke="black" />
-        <path d="M561.827 339.211L549.289 363.322L471.752 322.068C468.591 320.047 466.925 316.346 467.511 312.639L467.982 309.654L477.447 290.724L477.664 290.289L477.237 290.06L172.689 126.303L176.434 119.748L176.447 119.726L176.457 119.703L180.239 111.193L496.33 278.711L486.055 298.772L485.83 299.212L486.267 299.442L561.827 339.211Z" stroke="black" />
-        <path d="M81.0102 196.5L130 196.5L130 588.5V588.5C130 592.991 128.26 597.307 125.145 600.542L117 609L103 623L70 653.5L49.5 644L49.5001 642.5" stroke="black" />
-        <path d="M289.5 595H328V670H289.5V595Z" stroke="black" />
-        <path d="M100.5 678H330V771H100.5V678Z" stroke="black" />
-        <path d="M394.5 771.499V788.5H101.5V771.001L394.5 771.499Z" stroke="black" />
-        <path d="M4 682H49C50.933 682 52.5 683.567 52.5 685.5V788.5H4V682Z" stroke="black" />
-        <path d="M77 587.5V642.5H4V587.5H77Z" stroke="black" />
-        <path d="M115.5 497V587.5H4V497H115.5Z" stroke="black" />
-        <path d="M80.5 100.5V496.5H4.00063L4.49937 100.5H80.5Z" stroke="black" />
-        <path d="M39 62.5V100.5H4.5V62.5H39Z" stroke="black" />
-        <path d="M4.5 5H93.5V40.9972L4.5 40.5028V5Z" stroke="black" />
-        <path d="M93.5 5H127V73.5072L93.5 73.9927V5Z" stroke="black" />
-        <path d="M86.5 200.5H116V305.5H86.5V200.5Z" stroke="black" />
-        <path d="M86.5 330.5H116V434.5H86.5V330.5Z" stroke="black" />
-        <path d="M193.615 442H301.615V589H193.615V442Z" stroke="black" />
-        <path d="M306 440.5H372V496H306V440.5Z" stroke="black" />
-        <path d="M503 490.5H481.5V446H503V490.5Z" stroke="black" />
-      </svg>
-
-
-
+    <div className="flex ml-[16rem]" style={{ position: 'relative' }}>
+      <LeftSidePanel />
+      <CampusMap />
+      <RightSidePanel />
     </div>
-  )
+  );
 }
 
 export default TestKiosk

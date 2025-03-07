@@ -9,7 +9,7 @@ import KioskSettings from "./pages/Kiosk/KioskSettings"
 import Reports from "./pages/Reports"
 import Users from "./pages/Users"
 import Profile from "./pages/Profile"
-import CampusMap from "./assets/CampusMap"
+import CampusMap from "./components/TestKiosk/CampusMap"
 
 const router = createBrowserRouter([
    {

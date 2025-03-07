@@ -6,6 +6,15 @@
    --font-righteous: "Righteous", serif;
 }
 
+@layer utilities {
+   .translate-y-full {
+     transform: translateY(100%);
+   }
+   .translate-y-0 {
+     transform: translateY(0);
+   }
+ }
+
 html {
    overflow: hidden;
 }
