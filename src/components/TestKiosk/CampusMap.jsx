@@ -76,7 +76,13 @@ const CampusMap = () => {
                   id: "1",
                   name: "Neurosama Room",
                   image: "https://placehold.co/223x169",
-                  description: "An advanced AI-powered room designed for deep learning and interactive discussions on neural networks and artificial intelligence."
+                  description: "An advanced AI-powered room designed for deep learning and interactive discussions on neural networks and artificial intelligence.",
+                  navigationPaths: [
+                     {
+                        kioskId: "kiosk_1",
+                        path: "M234.516,593.5L157.516,599.5L156.516,296.5L429.516,308.5L633.516,419.5L585.516,517.5"
+                     },
+                  ]
                },
                {
                   id: "2",
@@ -97,12 +103,20 @@ const CampusMap = () => {
                   description: "A room dedicated to anime culture, screenings, and community discussions."
                },
             ],
-            showNavigation: [
-
-            ],
-            coordinates: {
-
-            }
+            navigationPaths: [
+               {
+                  kioskId: "kiosk_1",
+                  path: "M234.516,593.5L157.516,599.5L156.516,296.5L429.516,308.5L633.516,419.5L585.516,517.5"
+               },
+               {
+                  kioskId: "kiosk_2",
+                  path: "M500,600L450,500L300,400L200,350L100,300"
+               },
+               {
+                  kioskId: "kiosk_3",
+                  path: "M600,700L550,600L400,500L350,450L250,400"
+               }
+            ]
          },
          {
             id: "2",
@@ -515,7 +529,7 @@ const CampusMap = () => {
          {selectedBuilding && isBuildingQRCodePanelOpen && (
             <>
                <div className='absolute inset-0 bg-black opacity-40 z-10'></div>
-               <div className="w-[28.8125rem] h-[25.5rem] flex flex-col gap-[1.3125rem] absolute z-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg p-6">
+               <div className="w-[28.8125rem] h-[25.5rem] flex flex-col gap-[1.3125rem] absolute z-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg p-6 overflow-auto">
                   <div className='flex justify-between items-center'>
                      <h3 className='text-[1.25rem] font-semibold'>QR Code for {selectedBuilding.name}</h3>
                      <div
@@ -543,10 +557,6 @@ const CampusMap = () => {
                      >
                         <span className='text-[#110D79] font-semibold text-[.875rem]'>Back to Info</span>
                      </button>
-
-                     <button className="w-[12.25rem] h-[2.375rem] flex items-center justify-center border-[#F97316] border-[1px] border-solid bg-[#F9731626] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#f973161a] hover:border-[#d35e12]">
-                        <span className='text-[#F97316] font-semibold text-[.875rem]'>Download</span>
-                     </button>
                   </div>
                </div>
             </>
@@ -556,7 +566,7 @@ const CampusMap = () => {
          {selectedRoom && (
             <>
                <div className='absolute inset-0 bg-black opacity-40 z-10'></div>
-               <div className="w-[28.8125rem] h-auto max-h-[25.5rem] flex flex-col gap-[1rem] absolute z-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg p-6">
+               <div className="w-[28.8125rem] h-auto max-h-[25.5rem] flex flex-col gap-[1rem] absolute z-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 overflow-auto bg-white shadow-lg p-6">
                   <div className='flex justify-between items-center'>
                      <h3 className='text-[1.25rem] font-semibold'>{selectedRoom.name}</h3>
                      <div
@@ -578,10 +588,16 @@ const CampusMap = () => {
                      <p className='text-[.875rem]'>{selectedRoom.description}</p>
                   </div>
 
-                  <div className='flex justify-center mt-4'>
+                  <div className='flex justify-center mt-4 gap-4'>
                      <button className="w-[12.25rem] h-[2.375rem] flex items-center justify-center gap-[0.6875rem] border-[#110D79] border-[1px] border-solid bg-[#D1D6FA] cursor-pointer hover:bg-[#bfc4f5]">
                         <SentIconSMIcon />
                         <span className='text-[#110D79] font-semibold text-[.875rem]'>Navigate to Room</span>
+                     </button>
+                     <button
+                        className="w-[12.25rem] h-[2.375rem] flex items-center justify-center gap-[0.6875rem] border-[#F97316] border-[1px] border-solid bg-[#F9731626] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#f973161a] hover:border-[#d35e12] hover:scale-105"
+                     >
+                        <QRCodeIcon />
+                        <span className='text-[#F97316] font-semibold text-[.875rem]'>Generate QR Code</span>
                      </button>
                   </div>
                </div>
