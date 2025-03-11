@@ -5,7 +5,7 @@ import CampusMap from '../../components/TestKiosk/CampusMap';
 
 const TestKiosk = () => {
   return (
-    <div className="flex ml-[16rem]" style={{ position: 'relative' }}>
+    <div className="flex ml-[19.5625rem] mt-[1.875rem]">
       <LeftSidePanel />
       <CampusMap />
       <RightSidePanel />
