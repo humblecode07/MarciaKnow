@@ -5,6 +5,7 @@ import { fetchKiosks } from '../../api/api';
 import EditIcon from '../../assets/Icons/EditIcon';
 import DeleteIcon from '../../assets/Icons/DeleteIcon';
 import ShowIconTwo from '../../assets/Icons/ShowIconTwo';
+import { NavLink } from 'react-router-dom';
 
 const KioskSettings = () => {
   const { data: kiosks, error, isLoading } = useQuery({
@@ -22,10 +23,13 @@ const KioskSettings = () => {
         <span className='font-roboto text-[.875rem] text-[#737373]'>Manage and configure kiosk settings, including location details, navigation guides, and connected devices.</span>
       </div>
       <div className='flex justify-end'>
-        <button className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#110D79] border-solid border-[1px] border-[#110D79] bg-[#D1D6FA] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#B0B7F5]'>
+        <NavLink
+          to={'add-kiosk'}
+          className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#110D79] border-solid border-[1px] border-[#110D79] bg-[#D1D6FA] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#B0B7F5]'
+        >
           <AddIcon />
           <span className='font-bold text-[.75rem]'>Add Kiosk</span>
-        </button>
+        </NavLink>
       </div>
       <section className='flex flex-col gap-[1rem]'>
         {kiosks.map((kiosk) => (

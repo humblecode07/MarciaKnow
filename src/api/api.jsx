@@ -28,3 +28,14 @@ export const fetchKiosks = async () => {
       throw error;
    }
 }
+
+export const createKiosk = async (data) => {
+   try {
+      const response = await axiosPrivate.post('/kiosk', data);
+      console.log('Kiosk created successfully', response.data);
+      return response.data;
+   }
+   catch (error) {
+      console.log('Error creating kiosk:', error.response?.data || error.message);
+   }
+}
