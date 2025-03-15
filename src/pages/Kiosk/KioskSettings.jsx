@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AddIcon from '../../assets/Icons/AddIcon'
-import { fetchKiosks } from '../../api/api';
+import { deleteKiosk, fetchKiosks } from '../../api/api';
 import EditIcon from '../../assets/Icons/EditIcon';
 import DeleteIcon from '../../assets/Icons/DeleteIcon';
 import ShowIconTwo from '../../assets/Icons/ShowIconTwo';
 import { NavLink } from 'react-router-dom';
 
 const KioskSettings = () => {
+  const queryClient = useQueryClient();
   const { data: kiosks, error, isLoading } = useQuery({
     queryKey: ['kiosks'],
     queryFn: fetchKiosks,
@@ -15,6 +16,18 @@ const KioskSettings = () => {
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
+
+  const handleDeleteKiosk = async (kioskID) => {
+    try {
+      const deletedKiosk = await deleteKiosk(kioskID);
+      if (deletedKiosk) {
+        console.log('Kiosk deleted:', deletedKiosk);
+        queryClient.invalidateQueries(['kiosks']);
+      }
+    } catch (error) {
+      console.error('Failed to delete kiosk:', error.message);
+    }
+  }
 
   return (
     <div className="w-[73.98dvw] flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem]">
@@ -45,11 +58,17 @@ const KioskSettings = () => {
                     <ShowIconTwo />
                     <span className='text-[#110D79] text-[.875rem]'>Show</span>
                   </button>
-                  <button className='flex gap-[.75rem] items-center cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#159A2B]'>
+                  <NavLink 
+                    to={`edit-kiosk/${kiosk.kioskID}`}
+                    className='flex gap-[.75rem] items-center cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#159A2B]'
+                  >
                     <EditIcon />
                     <span className='text-[#1EAF34] text-[.875rem]'>Edit</span>
-                  </button>
-                  <button className='flex gap-[.75rem] items-center cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#991515]'>
+                  </NavLink>
+                  <button 
+                    onClick={() => handleDeleteKiosk(kiosk.kioskID)}
+                    className='flex gap-[.75rem] items-center cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#991515]'
+                  >
                     <DeleteIcon />
                     <span className='text-[#AF1E1E] text-[.875rem]'>Delete</span>
                   </button>

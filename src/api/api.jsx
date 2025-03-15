@@ -39,3 +39,14 @@ export const createKiosk = async (data) => {
       console.log('Error creating kiosk:', error.response?.data || error.message);
    }
 }
+
+export const deleteKiosk = async (kioskID) => {
+   try {
+      const response = await axiosPrivate.delete(`kiosk/${kioskID}`);
+      console.log('Kiosk deleted successfully', response.data);
+      return response.data;
+   }
+   catch (error) {
+      console.log('Error deleting kiosk:', error.response?.data || error.message);
+   }
+}

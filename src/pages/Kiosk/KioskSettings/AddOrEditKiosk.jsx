@@ -96,7 +96,7 @@ const AddOrEditKiosk = () => {
                </div>
                <div className='flex gap-[1rem]'>
                   <button
-                     className="w-[12.03dvw] h-[2.5rem] border-solid border-[1px] border-[#4B5563] shadow-md 
+                     className="w-[12.03dvw] h-[2.5rem] border-solid border-[1px] border-[#4B5563] shadow-md cursor-pointer 
               transition duration-300 ease-in-out transform hover:scale-105 hover:bg-gray-100 
               active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                      onClick={handleCancel}
@@ -105,7 +105,7 @@ const AddOrEditKiosk = () => {
                   </button>
                   <button
                      className="w-[12.03dvw] h-[2.5rem] bg-[#4329D8] border-solid border-[1px] border-[#4B5563] 
-              shadow-md disabled:bg-gray-400 transition duration-300 ease-in-out transform 
+              shadow-md disabled:bg-gray-400 cursor-pointer transition duration-300 ease-in-out transform 
               hover:scale-105 hover:bg-[#3621a9] active:scale-95 focus:outline-none 
               focus:ring-2 focus:ring-indigo-500"
                      onClick={handleSubmit}
