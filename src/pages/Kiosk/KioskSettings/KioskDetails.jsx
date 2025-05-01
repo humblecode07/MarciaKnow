@@ -1,13 +1,18 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import CampusMap from '../../../components/TestKiosk/CampusMap'
-import { useNavigate } from 'react-router-dom'
-import { createKiosk } from '../../../api/api';
+import { useNavigate, useParams } from 'react-router-dom'
+import { createKiosk, fetchKiosk, updateKiosk } from '../../../api/api';
+import { useLocation } from 'react-router-dom';
 
-const AddOrEditKiosk = () => {
+const KioskDetails = () => {
    const navigate = useNavigate();
+   const location = useLocation();
+   const { kioskID } = useParams();
+   const [mode, setMode] = useState('');
+
    const [kioskName, setKioskName] = useState('');
-   const [location, setLocation] = useState('');
-   const [position, setPosition] = useState({ x: '', y: '' });
+   const [kioskLocation, setKioskLocation] = useState('');
+   const [position, setPosition] = useState({ x: null, y: null });
 
    const handleMapClick = (x, y) => {
       setPosition({ x, y });
@@ -17,13 +22,42 @@ const AddOrEditKiosk = () => {
       navigate(-1);
    };
 
+   console.log(kioskID);
+
+   useEffect(() => {
+      const path = location.pathname;
+
+      if (path.includes("edit-kiosk")) {
+         const getKiosk = async () => {
+            try {
+               const kiosk = await fetchKiosk(kioskID);
+
+               setKioskName(kiosk.name);
+               setKioskLocation(kiosk.location);
+               setPosition(kiosk.coordinates);
+            }
+            catch (error) {
+               console.error('Error fetching kiosk: ', error);
+               alert(`Failed to submit kiosk: ${error.message}`);
+            }
+         }
+         getKiosk();
+
+         setMode(import.meta.env.VITE_EDIT_KIOSK)
+      }
+      else {
+         setMode(import.meta.env.VITE_ADD_KIOSK)
+      }
+
+   }, [location.pathname, kioskID]);
+
    const handleSubmit = async () => {
       if (!kioskName.trim()) {
          alert('Please enter a kiosk name');
          return;
       }
 
-      if (!location.trim()) {
+      if (!kioskLocation.trim()) {
          alert('Please enter a location');
          return;
       }
@@ -33,28 +67,48 @@ const AddOrEditKiosk = () => {
          return;
       }
 
-      try {
-         // Prepare data for API
-         const kioskData = {
-            name: kioskName,
-            location: location,
-            coordinates: position
-         };
+      if (mode === import.meta.env.VITE_ADD_KIOSK) {
+         try {
+            const kioskData = {
+               name: kioskName,
+               location: kioskLocation,
+               coordinates: position
+            };
 
-         const newKiosk = await createKiosk(kioskData);
+            const newKiosk = await createKiosk(kioskData);
 
-         console.log(newKiosk);
+            console.log(newKiosk);
 
-         alert('Kiosk successfully created!');
-         navigate('/admin/kiosk-settings');
+            alert('Kiosk successfully created!');
+            navigate('/admin/kiosk-settings');
+         }
+         catch (error) {
+            console.error('Error submitting kiosk: ', error);
+            alert(`Failed to submit kiosk: ${error.message}`);
+         }
       }
-      catch (error) {
-         console.error('Error submitting kiosk: ', error);
-         alert(`Failed to submit kiosk: ${error.message}`);
+      else if (mode === import.meta.env.VITE_EDIT_KIOSK) {
+         try {
+            const kioskData = {
+               name: kioskName,
+               location: kioskLocation,
+               coordinates: position
+            };
+
+            const patchKiosk = await updateKiosk(kioskData, kioskID);
+
+            console.log(kioskData);
+            console.log(patchKiosk);
+
+            alert('Kiosk successfully updated!');
+            navigate('/admin/kiosk-settings');
+         }
+         catch (error) {
+            console.error('Error submitting kiosk: ', error);
+            alert(`Failed to submit kiosk: ${error.message}`);
+         }
       }
    };
-
-   console.log(position);
 
    return (
       <div className="flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem] font-roboto">
@@ -84,8 +138,8 @@ const AddOrEditKiosk = () => {
                            type="text"
                            name="location"
                            className='px-[1rem] text-[.875rem] outline-none w-full'
-                           value={location}
-                           onChange={(e) => setLocation(e.target.value)}
+                           value={kioskLocation}
+                           onChange={(e) => setKioskLocation(e.target.value)}
                         />
                      </div>
                   </div>
@@ -116,11 +170,11 @@ const AddOrEditKiosk = () => {
                </div>
             </div>
             <div className='w-[48rem] h-[48rem] bg-[#FBFCF8] p-[1rem] shadow-md overflow-auto'>
-               <CampusMap mode={import.meta.env.VITE_ADD_KIOSK} onPositionSelect={handleMapClick} />
+               <CampusMap mode={mode} coordinates={position} onPositionSelect={handleMapClick} />
             </div>
          </div>
       </div>
    )
 }
 
-export default AddOrEditKiosk
+export default KioskDetails

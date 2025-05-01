@@ -10,7 +10,9 @@ import Reports from "./pages/Reports"
 import Users from "./pages/Users"
 import Profile from "./pages/Profile"
 import CampusMap from "./components/TestKiosk/CampusMap"
-import AddOrEditKiosk from "./pages/Kiosk/KioskSettings/AddOrEditKiosk"
+import KioskDetails from "./pages/Kiosk/KioskSettings/KioskDetails"
+import BuildingDetails from "./pages/Kiosk/MapEditor/BuildingDetails"
+import RoomDetails from "./pages/Kiosk/MapEditor/RoomDetails"
 
 const router = createBrowserRouter([
    {
@@ -34,16 +36,28 @@ const router = createBrowserRouter([
             element: <MapEditor />
          },
          {
+            path: 'map-editor/edit-building/:buildingID',
+            element: <BuildingDetails />
+         },
+         {
+            path: 'map-editor/add-room',
+            element: <RoomDetails />
+         },
+         {
+            path: 'map-editor/edit-room/:roomID',
+            element: <RoomDetails />
+         },
+         {
             path: 'kiosk-settings',
             element: <KioskSettings />
          },
          {
             path: 'kiosk-settings/add-kiosk',
-            element: <AddOrEditKiosk />
+            element: <KioskDetails />
          },
          {
-            path: 'kiosk-settings/edit-kiosk/:id',
-            element: <AddOrEditKiosk />
+            path: 'kiosk-settings/edit-kiosk/:kioskID',
+            element: <KioskDetails />
          },
          {
             path: 'reports',

@@ -13,9 +13,17 @@ const Sidebar = () => {
    }
 
    const isActivePath = (path) => {
-      const currentPath = location.pathname.toLowerCase();
-      return currentPath === `/admin${path}`.toLowerCase();
+      const currentPath = location.pathname;
+
+      if (path === '') {
+         console.log(path);
+         return currentPath === '/admin';
+      }
+
+      // For other paths, check if currentPath includes the path string
+      return currentPath.includes(path);
    }
+
 
    return (
       <>
@@ -90,11 +98,11 @@ const Sidebar = () => {
                            to="map-editor"
                            className="flex items-center gap-6 select-none"
                         >
-                           <svg 
-                              className="min-w-[5px]" 
-                              width="5" height="5" 
-                              viewBox="0 0 5 5" 
-                              fill="none" 
+                           <svg
+                              className="min-w-[5px]"
+                              width="5" height="5"
+                              viewBox="0 0 5 5"
+                              fill="none"
                               xmlns="http://www.w3.org/2000/svg"
                               style={{ transform: isActivePath('/map-editor') ? 'scale(1.5)' : 'scale(1)' }}
                            >
@@ -109,11 +117,11 @@ const Sidebar = () => {
                            to="kiosk-settings"
                            className="flex items-center gap-6 select-none"
                         >
-                           <svg 
-                              className="min-w-[5px]" 
-                              width="5" height="5" 
-                              viewBox="0 0 5 5" 
-                              fill="none" 
+                           <svg
+                              className="min-w-[5px]"
+                              width="5" height="5"
+                              viewBox="0 0 5 5"
+                              fill="none"
                               xmlns="http://www.w3.org/2000/svg"
                               style={{ transform: isActivePath('/kiosk-settings') ? 'scale(1.5)' : 'scale(1)' }}
                            >

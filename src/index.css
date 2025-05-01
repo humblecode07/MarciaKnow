@@ -20,3 +20,8 @@
 html {
    overflow: hidden;
 }
+
+.dropdown-option:hover {
+  background-color: #110D79;
+  color: white;
+}

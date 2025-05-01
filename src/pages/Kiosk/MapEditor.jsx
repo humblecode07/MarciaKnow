@@ -6,6 +6,7 @@ import ShowIcon from '../../assets/Icons/ShowIcon';
 import HideIcon from '../../assets/Icons/HideIcon';
 import DeleteIcon from '../../assets/Icons/DeleteIcon';
 import ShowIconTwo from '../../assets/Icons/ShowIconTwo';
+import { NavLink } from 'react-router-dom';
 
 const MapEditor = () => {
   const [buildings, setBuildings] = useState([]);
@@ -74,10 +75,13 @@ const MapEditor = () => {
               <div className='flex items-center justify-between py-[1.1875rem]'>
                 <span className='text-[1rem] font-bold'>{building.name}</span>
                 <div className='flex gap-[1.4375rem] font-poppins'>
-                  <button className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#110D79] border-solid border-[1px] border-[#110D79] bg-[#D1D6FA] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#B0B7F5]'>
+                  <NavLink
+                    to={'add-room'}
+                    className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#110D79] border-solid border-[1px] border-[#110D79] bg-[#D1D6FA] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#B0B7F5]'
+                  >
                     <AddIcon />
                     <span className='font-bold text-[.75rem]'>Add a Room</span>
-                  </button>
+                  </NavLink>
                   <button className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#1EAF34] border-solid border-[1px] border-[#1EAF34] bg-[#D1FAE5] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#A6F4C5]'>
                     <EditIcon />
                     <span className='font-bold text-[.75rem]'>Edit</span>

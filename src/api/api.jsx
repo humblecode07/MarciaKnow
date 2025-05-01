@@ -29,6 +29,18 @@ export const fetchKiosks = async () => {
    }
 }
 
+export const fetchKiosk = async (kioskID) => {
+   try {
+      const response = await axiosPrivate.get(`kiosk/${kioskID}`);
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
 export const createKiosk = async (data) => {
    try {
       const response = await axiosPrivate.post('/kiosk', data);
@@ -40,6 +52,18 @@ export const createKiosk = async (data) => {
    }
 }
 
+export const updateKiosk = async (data, kioskID) => {
+   try {
+      const response = await axiosPrivate.patch(`/kiosk/${kioskID}`, data);
+      console.log('Kiosk updated successfully', response.data);
+      return response.data;
+   }
+   catch (error) {
+      console.log('Error creating kiosk:', error.response?.data || error.message);
+   }
+}
+
+
 export const deleteKiosk = async (kioskID) => {
    try {
       const response = await axiosPrivate.delete(`kiosk/${kioskID}`);
@@ -48,5 +72,17 @@ export const deleteKiosk = async (kioskID) => {
    }
    catch (error) {
       console.log('Error deleting kiosk:', error.response?.data || error.message);
+   }
+}
+
+export const fetchNavigationIcons = async () => {
+   try {
+      const response = await axiosPrivate.get("/icon");
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
    }
 }
