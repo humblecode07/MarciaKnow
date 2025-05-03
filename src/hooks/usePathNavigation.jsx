@@ -3,15 +3,12 @@ import * as d3 from 'd3';
 
 const usePathNavigation = (svgRef, mode, selectedKiosk, currentPath, setCurrentPath) => {
    useEffect(() => {
-      // When a kiosk is selected and navigation mode is activated
       if (selectedKiosk && mode === import.meta.env.VITE_ADD_ROOM) {
-         // Initialize the path with the kiosk's position as the starting point
          setCurrentPath([{
             x: selectedKiosk.coordinates.x,
             y: selectedKiosk.coordinates.y
          }]);
       }
-      console.log('its working')
    }, [selectedKiosk, mode, setCurrentPath]);
 
    useEffect(() => {
@@ -21,9 +18,12 @@ const usePathNavigation = (svgRef, mode, selectedKiosk, currentPath, setCurrentP
       }
 
       const svg = d3.select(svgRef.current);
+
+      console.log('svg', svg);
+
       const g = svg.select("g");
 
-      console.log(mode);
+      console.log('g', g);
 
       if (mode !== import.meta.env.VITE_ADD_ROOM) {
          g.selectAll(".temp-path").remove();
@@ -31,8 +31,6 @@ const usePathNavigation = (svgRef, mode, selectedKiosk, currentPath, setCurrentP
 
          return;
       }
-
-      console.log('saasas')
 
       g.selectAll(".temp-path").remove();
 
@@ -91,8 +89,12 @@ const usePathNavigation = (svgRef, mode, selectedKiosk, currentPath, setCurrentP
       };
 
       const handlePathClick = (event) => {
+         console.log('b');
+
          // Don't handle the click if it was already handled
          if (event.defaultPrevented) return;
+
+         console.log('c');
 
          // Prevent default to stop other handlers
          event.preventDefault();
@@ -111,17 +113,21 @@ const usePathNavigation = (svgRef, mode, selectedKiosk, currentPath, setCurrentP
       };
       // Add the click handler
       const backgroundRect = g.select("rect"); // Get the background rectangle
+      
+      console.log('g', g);
+      console.log('backgroundRect', backgroundRect.size());
 
       if (backgroundRect.size() > 0) {
+         console.log('a');
+         console.log('backgroundRect', backgroundRect);
          backgroundRect.on("click", handlePathClick);
       }
 
       updatePath();
 
       return () => {
-         if (backgroundRect && backgroundRect.size() > 0) {
-            backgroundRect.on("click", null);
-         }
+         backgroundRect.on("click", null);
+         svg.on("click", null);
       };
    }, [currentPath, mode, selectedKiosk, setCurrentPath, svgRef]);
 

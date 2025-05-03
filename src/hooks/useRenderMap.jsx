@@ -1,16 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3';
+import { useLocation } from 'react-router-dom';
 
-const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mode, onPositionSelect) => {
+const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mode, coordinates, onPositionSelect, selectedKiosk, currentPath, setCurrentPath) => {
+   const location = useLocation();
+   const path = location.pathname;
+
    const zoomTransformRef = useRef(d3.zoomIdentity);
 
    const [x, setX] = useState(0);
    const [y, setY] = useState(0);
 
-   console.log(mode);
+   // coords of kiosk for edit kiosk mode
+   useEffect(() => {
+      if (path.includes("edit-kiosk") && coordinates) {
+         setX(coordinates.x);
+         setY(coordinates.y);
+      }
+   }, [path, coordinates]);
+
 
    useEffect(() => {
-
       if (!svgRef.current || buildings.length === 0) return;
 
       // Clear any existing content
@@ -18,8 +28,6 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
       // Get dimensions
       const svg = d3.select(svgRef.current);
-      // const width = +svg.attr("width") || 800;
-      // const height = +svg.attr("height") || 600;
 
       // Create a group for all map elements
       const g = svg.append("g");
@@ -30,14 +38,15 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
       // Track the current transform state
       let currentTransform = d3.zoomIdentity;
 
+      console.log('svg', svg);
+      console.log('g', g);
+
       // Add background
-      g.append("rect")
+      const backgroundRect = g.append("rect")
          .attr("width", 5000)
          .attr("height", 5000)
-         .attr("fill", "transparent")
+         .attr("fill", "#FBFCF8")
          .attr("pointer-events", "all"); // Ensure we can catch events on the background
-
-
 
       // Define pathways/lines
       const pathways = [
@@ -153,14 +162,14 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
                      d3.select(this).attr("stroke", "#1a237e");
                   }
                });
-         } 
+         }
          else {
             // In other modes (like add-kiosk), just set default cursor
             buildingPath.attr("cursor", "default");
          }
 
          // Add building labels
-         const bbox = document.getElementById(building.id)?.getBBox();
+         const bbox = buildingPath.node()?.getBBox();
 
          if (bbox) {
             g.append("text")
@@ -217,7 +226,110 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          .attr("fill", "#ff0000")
          .attr("stroke", "none");
 
-      console.log('alcie')
+      // Handle path drawing functionality in ADD_ROOM mode
+      if (mode === import.meta.env.VITE_ADD_ROOM) {
+         // Remove any existing temporary paths and markers
+         g.selectAll(".temp-path").remove();
+         g.selectAll(".path-point-marker").remove();
+
+         // Create a new temporary path for drawing
+         let drawingPath = g.append("path")
+            .attr("class", "temp-path")
+            .attr("fill", "none")
+            .attr("stroke", 'black')
+            .attr("stroke-width", 3)
+            .attr("stroke-dasharray", "5,5");
+
+         // Update path display with current path points
+         const updatePath = () => {
+            if (currentPath.length < 2) {
+               drawingPath.attr("d", "");
+               return;
+            }
+
+            // Create a D3 line generator
+            const lineGenerator = d3.line()
+               .x(d => d.x)
+               .y(d => d.y)
+               .curve(d3.curveCardinal); // Smooths the line
+
+            drawingPath.attr("d", lineGenerator(currentPath));
+            updatePointMarkers();
+         };
+
+         if (selectedKiosk) {
+            renderDestinationMarker(g, selectedKiosk.coordinates.x, selectedKiosk.coordinates.y, "#FF5722", "You Are Here");
+         }
+
+         // Add markers for path points
+         const updatePointMarkers = () => {
+            // Remove existing point markers
+            g.selectAll(".path-point-marker").remove();
+            g.selectAll(".destination-marker").remove();
+
+            // Add point markers
+            currentPath.forEach((point, index) => {
+               // For the first point (start), use orange marker
+               if (index === 0) {
+                  renderDestinationMarker(g, point.x, point.y, "#FF5722", "You Are Here");
+               }
+               // For the last point (destination), use teal marker
+               else if (index === currentPath.length - 1) {
+                  renderDestinationMarker(g, point.x, point.y, "#009688", "Destination");
+               }
+               // For intermediate points (optional), use smaller pins or circles
+               else {
+                  g.append("circle")
+                     .attr("class", "path-point-marker")
+                     .attr("cx", point.x)
+                     .attr("cy", point.y)
+                     .attr("r", 4)
+                     .attr("fill", "#607D8B") // Medium gray-blue color for intermediate points
+                     .attr("stroke", "#FFFFFF")
+                     .attr("stroke-width", 1.5);
+               }
+            });
+         };
+
+         // Click handler for adding path points
+         const handlePathClick = (event) => {
+            console.log('b');
+
+            // Don't handle the click if it was already handled
+            if (event.defaultPrevented) return;
+
+            console.log('c');
+
+            // Prevent default to stop other handlers
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Get coordinates relative to the SVG
+            const svgPoint = svg.node().createSVGPoint();
+            svgPoint.x = event.clientX;
+            svgPoint.y = event.clientY;
+
+            // Transform to account for zoom/pan
+            const transformedPoint = svgPoint.matrixTransform(g.node().getScreenCTM().inverse());
+
+            // Add point to the current path
+            setCurrentPath(prev => [...prev, { x: transformedPoint.x, y: transformedPoint.y }]);
+         };
+
+         // Add click handler to background for path creation
+         if (backgroundRect.size() > 0) {
+            console.log('a');
+            console.log('backgroundRect', backgroundRect);
+            backgroundRect.on("click", handlePathClick);
+         }
+
+         // Initial update of path display
+         updatePath();
+      } else {
+         // If not in ADD_ROOM mode, remove temporary paths and markers
+         g.selectAll(".temp-path").remove();
+         g.selectAll(".path-point-marker").remove();
+      }
 
       // Create a SINGLE zoom behavior - this is crucial
       const zoom = d3.zoom()
@@ -233,33 +345,27 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
       // Handle click events on the SVG
       svg.on("click", (event) => {
-         console.log('Click detected on SVG');
-
-         if (event.defaultPrevented) {
-            console.log('Event was prevented');
-            return;
-         }
-
+         // Don't process clicks if in ADD_ROOM mode (handled by handlePathClick)
          if (mode === import.meta.env.VITE_ADD_ROOM) return;
 
          const [rawX, rawY] = d3.pointer(event, svg.node());
 
-         console.log('where do you wanna go?')
+         // Get the current zoom transform
+         const currentTransform = d3.zoomTransform(svg.node());
 
-         // Use the stored transform for accurate conversion
+         // Apply the inverse transform to get coordinates in the original coordinate space
+         const transformedX = currentTransform.invertX(rawX);
+         const transformedY = currentTransform.invertY(rawY);
 
-         const transformedX = zoomTransformRef.current.invertX(rawX);
-         const transformedY = zoomTransformRef.current.invertY(rawY);
-
-         // If in add/edit mode, show the marker
-
-         if (mode === import.meta.env.VITE_ADD_KIOSK || mode === import.meta.env.VITE_EDIT_KIOSK) {
-            // Update state with transformed coordinates
+         // If in add kiosk mode, show the marker
+         if (mode === import.meta.env.VITE_ADD_KIOSK) {
+            // Update state
             setX(transformedX);
             setY(transformedY);
+
             onPositionSelect(transformedX, transformedY);
 
-            // Update marker position without affecting zoom
+            // Update marker position and make it visible
             markerGroup
                .attr("transform", `translate(${transformedX}, ${transformedY})`)
                .style("visibility", "visible");
@@ -267,7 +373,6 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          else {
             markerGroup.style("visibility", "hidden");
 
-            // Reset building and pathway styling
             g.selectAll("path[id^='building-']")
                .attr("fill", "#FFFFFF");
             g.selectAll("path[id^='pathway-']")
@@ -279,30 +384,73 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
       // This is important - if x and y change (from external state), update the marker position
       // but don't reset the zoom
-
       if (x !== 0 && y !== 0 && (mode === import.meta.env.VITE_ADD_KIOSK || mode === import.meta.env.VITE_EDIT_KIOSK)) {
          markerGroup
             .attr("transform", `translate(${x}, ${y})`)
             .style("visibility", "visible");
       }
 
-      // if (mode === import.meta.env.VITE_ADD_ROOM) {
-
-      //g.append("circle")
-      // .attr("class", "saved-path")
-      // .attr("cx", data.selectedKiosk.coordinates.x)
-      // .attr("cy", data.selectedKiosk.coordinates.y)
-      // .attr("r", 6)
-      // .attr("fill", "#00FF00")
-      // .attr("stroke", "#FFFFFF");
-      // }
-
       return () => {
-         // Only remove the click handler on cleanup
+         // Remove event handlers on cleanup
          svg.on("click", null);
+         if (backgroundRect && backgroundRect.size() > 0) {
+            backgroundRect.on("click", null);
+         }
       };
+   }, [svgRef, selectedBuilding, onSelectBuilding, buildings, mode, onPositionSelect, x, y, currentPath, setCurrentPath, selectedKiosk]);
 
-   }, [svgRef, selectedBuilding, onSelectBuilding, buildings, mode, onPositionSelect, x, y]);
+   useEffect(() => {
+      if (selectedKiosk && mode === import.meta.env.VITE_ADD_ROOM) {
+         setCurrentPath([{
+            x: selectedKiosk.coordinates.x,
+            y: selectedKiosk.coordinates.y
+         }]);
+      }
+   }, [selectedKiosk, mode, setCurrentPath]);
+
+   // Helper function for rendering destination markers
+   const renderDestinationMarker = (g, x, y, color, label) => {
+      // Create a group for the marker
+      const markerGroup = g.append("g")
+         .attr("class", "destination-marker saved-path")
+         .attr("transform", `translate(${x}, ${y})`);
+
+      // Create a teardrop/pin shape similar to the image
+      markerGroup.append("path")
+         .attr("d", `
+         M0,-24
+         C10,-24 16,-18 16,-8
+         C16,4 0,16 0,16
+         C0,16 -16,4 -16,-8
+         C-16,-18 -10,-24 0,-24
+         Z
+         `)
+         .attr("fill", color || "#FF5722") // Orange color like in the image
+         .attr("stroke", "#FFFFFF")
+         .attr("stroke-width", 1.5);
+
+      // Add inner circle for the pin hole effect
+      markerGroup.append("circle")
+         .attr("cy", -14)
+         .attr("r", 5)
+         .attr("fill", "#FFFFFF");
+
+      // Optionally add label if provided
+      if (label && label !== "") {
+         markerGroup.append("text")
+            .attr("y", 24)
+            .attr("text-anchor", "middle")
+            .attr("fill", "#000000")
+            .attr("stroke", "#FFFFFF")
+            .attr("stroke-width", 0.5)
+            .attr("paint-order", "stroke")
+            .attr("font-size", "10px")
+            .attr("font-weight", "bold")
+            .text(label);
+      }
+
+      return markerGroup;
+   };
 }
 
 export default useRenderMap

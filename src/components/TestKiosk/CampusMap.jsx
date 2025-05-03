@@ -12,17 +12,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import usePathNavigation from '../../hooks/usePathNavigation';
 
 const CampusMap = ({ mode, coordinates, onPositionSelect, data }) => {
-   const queryClient = useQueryClient();
-   const { data: buildings, error, isLoading } = useQuery({
-      queryKey: ['buildings'],
-      queryFn: fetchBuildings,
-   });
-
    const location = useLocation();
    const path = location.pathname;
 
    const svgRef = useRef(null);
 
+   const [buildings, setBuildings] = useState([]);
    const [selectedBuilding, setSelectedBuilding] = useState(null);
    const [isBuildingInfoPanelOpen, setIsBuildingInfoPanelOpen] = useState(false);
    const [isBuildingQRCodePanelOpen, setIsBuildingQRCodePanelOpen] = useState(false);
@@ -54,13 +49,23 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data }) => {
       setIsBuildingQRCodePanelOpen(false);
    }
 
-   console.log(mode);
+   useEffect(() => {
+      const getBuildings = async () => {
+         try {
+            const data = await fetchBuildings();
+            setBuildings(data);
+         }
+         catch (error) {
+            console.error("Failed to load buildings:", error);
+         }
+      };
 
-   useRenderMap(svgRef, buildings, selectedBuilding, handleSelectBuilding, mode, onPositionSelect);
-   usePathNavigation(svgRef, mode, data.selectedKiosk, currentPath, setCurrentPath);
+      getBuildings();
+   }, []);
 
-   if (isLoading) return <p>Loading...</p>;
-   if (error) return <p>Error: {error.message}</p>;
+   console.log(data);
+
+   useRenderMap(svgRef, buildings, selectedBuilding, handleSelectBuilding, mode, coordinates, onPositionSelect, data?.selectedKiosk, currentPath, setCurrentPath);
 
    // Remove last point in current path
    return (
