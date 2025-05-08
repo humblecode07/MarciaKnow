@@ -11,7 +11,7 @@ import useRenderMap from '../../hooks/useRenderMap';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import usePathNavigation from '../../hooks/usePathNavigation';
 
-const CampusMap = ({ mode, coordinates, onPositionSelect, data }) => {
+const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, setCurrentPath }) => {
    const location = useLocation();
    const path = location.pathname;
 
@@ -23,7 +23,6 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data }) => {
    const [isBuildingQRCodePanelOpen, setIsBuildingQRCodePanelOpen] = useState(false);
 
    const [selectedRoom, setSelectedRoom] = useState(null);
-   const [currentPath, setCurrentPath] = useState([]);
 
    // Functions
 

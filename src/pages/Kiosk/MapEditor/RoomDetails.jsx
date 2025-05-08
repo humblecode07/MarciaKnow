@@ -10,8 +10,20 @@ import { v4 as uuidv4 } from 'uuid'
 import { useLocation, useNavigate } from 'react-router-dom';
 import ResetIcon from '../../../assets/Icons/ResetIcon';
 import RevertIcon from '../../../assets/Icons/RevertIcon';
+import NavigationIconsModal from '../../../modals/NavigationIconsModal';
 
 const RoomDetails = () => {
+  const { data: kiosksData, error: kiosksError, isLoading: kiosksLoading } = useQuery({
+    queryKey: ['kiosks'],
+    queryFn: fetchKiosks,
+  });
+
+  const { data: navigationIcons, error: navigationIconsError, isLoading: navigationIconsLoading } = useQuery({
+    queryKey: ['navigationIcons'],
+    queryFn: fetchNavigationIcons,
+  });
+
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,16 +38,6 @@ const RoomDetails = () => {
     path: "",
     navigationGuide: [],
   })
-
-  const { data: kiosksData, error: kiosksError, isLoading: kiosksLoading } = useQuery({
-    queryKey: ['kiosks'],
-    queryFn: fetchKiosks,
-  });
-
-  const { data: navigationIcons, error: navigationIconsError, isLoading: navigationIconsLoading } = useQuery({
-    queryKey: ['navigationIcons'],
-    queryFn: fetchNavigationIcons,
-  });
 
   const [selectedKiosk, setSelectedKiosk] = useState(kiosksData?.[0] || null);
   const [navigationGuide, setNavigationGuide] = useState([]);
@@ -58,6 +60,20 @@ const RoomDetails = () => {
 
     setNavigationGuide([...navigationGuide, newGuide]);
   }
+
+  const updateStepDescription = (rule, index, value) => {
+    if (rule === "ICON") {
+      const updated = [...navigationGuide];
+      console.log('updated', updated);
+      updated[index] = { ...updated[index], icon: value };
+      setNavigationGuide(updated);
+    }
+    else if (rule === "DESCRIPTION") {
+      const updated = [...navigationGuide];
+      updated[index] = { ...updated[index], description: value };
+      setNavigationGuide(updated);
+    }
+  };
 
   const removeNavigationGuideCard = (id) => {
     setNavigationGuide(navigationGuide.filter(guide => guide.id !== id));
@@ -87,10 +103,17 @@ const RoomDetails = () => {
   const [currentPath, setCurrentPath] = useState([]);
 
   const removeLastPoint = () => {
-    if (currentPath.length > 0) {
+    if (currentPath.length > 1) {
       setCurrentPath(prev => prev.slice(0, -1));
     }
   };
+
+  const resetPathPoints = () => {
+    setCurrentPath(prev => prev.slice(0, 1));
+  };
+
+  console.log('currentPath', currentPath);
+  console.log('navigationGuide', navigationGuide);
 
   if (kiosksLoading || navigationIconsLoading) return <div>Loading...</div>;
 
@@ -103,7 +126,6 @@ const RoomDetails = () => {
     console.error('Error fetching navigation icons:', navigationIconsError);
     return <div>Error loading navigation icons data.</div>;
   }
-
 
   return (
     <div className="w-[73.98dvw] flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem]">
@@ -158,6 +180,7 @@ const RoomDetails = () => {
             <textarea
               name=""
               id=""
+              placeholder='Enter your room description here...'
               className='w-[36.25dvw]  flex items-center text-[.875rem] border-solid border-[1px] border-black p-[1rem] outline-none'
             />
             <span className='font-bold text-[1rem]'>Images</span>
@@ -179,19 +202,13 @@ const RoomDetails = () => {
               {Array.isArray(navigationGuide) && navigationGuide.length > 0 ? (
                 navigationGuide.map((step, index) => (
                   <div className='flex gap-[0.625rem]' key={step.id}>
-                    <div
-                      className='w-[2.5rem] h-[2.5rem] border-solid border-[1px] border-black flex items-center justify-center'
-                    >
-                      <img
-                        src={step.icon}
-                        alt=""
-                      />
-                    </div>
+                    <NavigationIconsModal icon={step.icon} index={index} updateIcon={updateStepDescription} />
                     <textarea
                       name=""
                       id=""
                       className='w-[30.90dvw] h-[5rem] border-solid border-[1px] border-black flex text-[.875rem] p-[1rem] outline-none'
                       placeholder='Enter your navigation text here...'
+                      onChange={(e) => updateStepDescription("DESCRIPTION", index, e.target.value)}
                     />
                     <button
                       className="w-[2.5rem] h-[2.5rem] hover:bg-gray-300 focus:bg-gray-400 flex items-center justify-center rounded-full cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
@@ -262,14 +279,20 @@ const RoomDetails = () => {
             <div className='flex justify-between'>
               <span className='font-bold font-poppins text-[1.125rem]'>Locate a Building</span>
               <div className='flex gap-[.5rem]'>
-                <div className='flex items-center gap-[.5rem] border-[1px] border-black px-[1rem]'>
+                <button
+                  onClick={() => removeLastPoint()}
+                  className='flex items-center gap-[.5rem] border-[1px] border-black px-[1rem] cursor-pointer'
+                >
                   <RevertIcon />
                   <span className='text-[.875rem]'>Revert</span>
-                </div>
-                <div className='flex items-center gap-[.5rem] border-[1px] border-black px-[1rem]'>
+                </button>
+                <button
+                  onClick={() => resetPathPoints()}
+                  className='flex items-center gap-[.5rem] border-[1px] border-black px-[1rem] cursor-pointer'
+                >
                   <ResetIcon />
                   <span className='text-[.875rem]'>Reset</span>
-                </div>
+                </button>
               </div>
             </div>
             <CampusMap mode={import.meta.env.VITE_ADD_ROOM} data={{ selectedKiosk }} currentPath={currentPath} setCurrentPath={setCurrentPath} />
