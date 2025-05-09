@@ -76,7 +76,7 @@ const MapEditor = () => {
                 <span className='text-[1rem] font-bold'>{building.name}</span>
                 <div className='flex gap-[1.4375rem] font-poppins'>
                   <NavLink
-                    to={'add-room'}
+                    to={`${building._id}/add-room`}
                     className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#110D79] border-solid border-[1px] border-[#110D79] bg-[#D1D6FA] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#B0B7F5]'
                   >
                     <AddIcon />

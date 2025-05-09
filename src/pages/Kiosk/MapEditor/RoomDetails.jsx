@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { fetchKiosks, fetchNavigationIcons } from '../../../api/api'
+import { createRoom, fetchKiosks, fetchNavigationIcons } from '../../../api/api'
 import UploadIcon from '../../../assets/Icons/UploadIcon';
 import AddIcon from '../../../assets/Icons/AddIcon';
 import XIcon from '../../../assets/Icons/XIcon';
@@ -7,7 +7,7 @@ import BlackXIcon from '../../../assets/Icons/BlackXIcon';
 import CampusMap from '../../../components/TestKiosk/CampusMap';
 import { useQuery } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid'
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ResetIcon from '../../../assets/Icons/ResetIcon';
 import RevertIcon from '../../../assets/Icons/RevertIcon';
 import NavigationIconsModal from '../../../modals/NavigationIconsModal';
@@ -23,22 +23,17 @@ const RoomDetails = () => {
     queryFn: fetchNavigationIcons,
   });
 
-
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { buildingID } = useParams();
+
   const [mode, setMode] = useState('');
 
-  const [roomData, setRoomData] = useState({
-    kioskID: "",
-    id: "",
-    name: "",
-    description: "",
-    floor: "",
-    path: "",
-    navigationGuide: [],
-  })
-
+  const [roomName, setRoomName] = useState('');
+  const [roomDescription, setRoomDescription] = useState('');
+  const [roomFloor, setRoomFloor] = useState(1);
+  const [currentPath, setCurrentPath] = useState([]);
   const [selectedKiosk, setSelectedKiosk] = useState(kiosksData?.[0] || null);
   const [navigationGuide, setNavigationGuide] = useState([]);
   const [images, setImages] = useState([]);
@@ -83,6 +78,43 @@ const RoomDetails = () => {
     navigate(-1);
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+
+    formData.append('kioskID', selectedKiosk.kioskID);
+    formData.append('id', buildingID);
+    formData.append('name', roomName);
+    formData.append('description', roomDescription);
+    formData.append('floor', roomFloor);
+    formData.append('path', JSON.stringify(currentPath));
+    formData.append('navigationGuide', JSON.stringify(navigationGuide));
+
+    if (images.length > 0) {
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        formData.append("images[]", image);
+      }
+    }
+
+    for (let pair of formData.entries()) {
+      console.log(`${pair[0]}:`, pair[1]);
+    }
+
+    try {
+      const response = await createRoom(formData, buildingID, selectedKiosk.kioskID);
+      console.log(response);
+      alert('Room successfully created!');
+      navigate('/admin/map-editor');
+    }
+    catch (error) {
+      console.error('Failed to create room:', error);
+    }
+  }
+
+  console.log('kioskID', selectedKiosk?.kioskID);
+
   useEffect(() => {
     const path = location.pathname;
 
@@ -100,8 +132,6 @@ const RoomDetails = () => {
     }
   }, [kiosksData]);
 
-  const [currentPath, setCurrentPath] = useState([]);
-
   const removeLastPoint = () => {
     if (currentPath.length > 1) {
       setCurrentPath(prev => prev.slice(0, -1));
@@ -111,9 +141,6 @@ const RoomDetails = () => {
   const resetPathPoints = () => {
     setCurrentPath(prev => prev.slice(0, 1));
   };
-
-  console.log('currentPath', currentPath);
-  console.log('navigationGuide', navigationGuide);
 
   if (kiosksLoading || navigationIconsLoading) return <div>Loading...</div>;
 
@@ -166,6 +193,7 @@ const RoomDetails = () => {
               <input
                 type="text"
                 className='px-[1rem] text-[.875rem] outline-none w-full'
+                onChange={(e) => setRoomName(e.target.value)}
               />
             </div>
             <span className='font-bold text-[1rem]'>Floor Located</span>
@@ -174,6 +202,7 @@ const RoomDetails = () => {
                 type="number"
                 min={1}
                 className='px-[1rem] text-[.875rem] outline-none w-full'
+                onChange={(e) => setRoomFloor(e.target.value)}
               />
             </div>
             <span className='font-bold text-[1rem]'>Room Description</span>
@@ -182,6 +211,7 @@ const RoomDetails = () => {
               id=""
               placeholder='Enter your room description here...'
               className='w-[36.25dvw]  flex items-center text-[.875rem] border-solid border-[1px] border-black p-[1rem] outline-none'
+              onChange={(e) => setRoomDescription(e.target.value)}
             />
             <span className='font-bold text-[1rem]'>Images</span>
             <div className='w-[36.25dvw] h-[7.5625rem] flex items-center justify-center border-dashed border-[1px] border-[#110D79] bg-[#D1D6FA] cursor-pointer relative'>
@@ -234,10 +264,10 @@ const RoomDetails = () => {
             </button>
           </div>
           <div className='flex justify-end gap-[.5rem]'>
-            <button className='w-[8.359375rem] h-[2.25rem] border-solid border-[1px] border-black text-[.875rem] font-bold'>
+            <button onClick={() => handleCancel()} className='w-[8.359375rem] h-[2.25rem] border-solid border-[1px] border-black text-[.875rem] font-bold cursor-pointer'>
               Cancel
             </button>
-            <button className='w-[8.359375rem] h-[2.25rem] border-solid border-[1px] border-[#1EAF34] bg-[#D1FAE5] text-[#1EAF34] text-[.875rem] font-bold'>
+            <button onClick={(e) => handleSubmit(e)} className='w-[8.359375rem] h-[2.25rem] border-solid border-[1px] border-[#1EAF34] bg-[#D1FAE5] text-[#1EAF34] text-[.875rem] font-bold cursor-pointer'>
               Submit
             </button>
           </div>

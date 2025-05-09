@@ -86,3 +86,15 @@ export const fetchNavigationIcons = async () => {
       throw error;
    }
 }
+
+export const createRoom = async (data, buildingID, kioskID) => {
+   try {
+      const response = await axiosPrivate.post(`/room/${buildingID}/${kioskID}`, data);
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}

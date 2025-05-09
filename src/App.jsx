@@ -36,15 +36,15 @@ const router = createBrowserRouter([
             element: <MapEditor />
          },
          {
-            path: 'map-editor/edit-building/:buildingID',
+            path: 'map-editor/:buildingID/edit-building/',
             element: <BuildingDetails />
          },
          {
-            path: 'map-editor/add-room',
+            path: 'map-editor/:buildingID/add-room',
             element: <RoomDetails />
          },
          {
-            path: 'map-editor/edit-room/:roomID',
+            path: 'map-editor/:buildingID/edit-room/:roomID',
             element: <RoomDetails />
          },
          {
