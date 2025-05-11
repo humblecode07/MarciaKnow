@@ -43,9 +43,7 @@ const RoomDetails = () => {
   const handleImageUpload = (event) => {
     const files = Array.from(event.target.files);
 
-    const newImagePreviews = files.map(file => URL.createObjectURL(file));
-
-    setImages([...images, ...newImagePreviews]);
+    setImages(prev => [...prev, ...files]);
   };
 
   const addNavigationGuideCard = () => {
@@ -105,8 +103,7 @@ const RoomDetails = () => {
 
     if (images.length > 0) {
       for (let i = 0; i < images.length; i++) {
-        const image = images[i];
-        formData.append("images[]", image);
+        formData.append("images[]", images[i]); // not "images[]", unless backend expects array format
       }
     }
 
@@ -125,7 +122,7 @@ const RoomDetails = () => {
     }
   }
 
-  console.log('kioskID', roomID);
+  console.log('images', images);
 
   useEffect(() => {
     const path = location.pathname;
@@ -152,10 +149,13 @@ const RoomDetails = () => {
 
           const response = await fetchRoom(buildingID, roomID);
 
-          console.log(response);
+          console.log('response', response);
           setRoomName(response.name);
           setRoomDescription(response.description);
           setRoomFloor(response.floor);
+          setImages([...response.image]);
+          setCurrentPath([...response.navigationPath])
+          setNavigationGuide([...response.navigationGuide]);
         }
         catch (error) {
           console.error('Fetch error:', error);
@@ -267,6 +267,7 @@ const RoomDetails = () => {
                       className='w-[30.90dvw] h-[5rem] border-solid border-[1px] border-black flex text-[.875rem] p-[1rem] outline-none'
                       placeholder='Enter your navigation text here...'
                       onChange={(e) => updateStepDescription("DESCRIPTION", index, e.target.value)}
+                      value={step.description}
                     />
                     <button
                       className="w-[2.5rem] h-[2.5rem] hover:bg-gray-300 focus:bg-gray-400 flex items-center justify-center rounded-full cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
@@ -305,27 +306,43 @@ const RoomDetails = () => {
             <span className='font-bold font-poppins text-[1.125rem]'>Preview Images</span>
             {images.length > 0 ? (
               <div className="w-[28.8375rem] border-dashed border-black border-[1px] p-4 flex flex-wrap gap-4">
-                {images.map((image, index) => (
-                  <div key={index} className="relative w-[8rem] h-[8rem]">
-                    <img
-                      src={image}
-                      alt={`Image ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-200 cursor-pointer"
-                      onClick={() => {
-                        const newImages = [...images];
-                        URL.revokeObjectURL(newImages[index]);
-                        newImages.splice(index, 1);
-                        setImages(newImages);
-                      }}
-                      aria-label="Remove image"
-                    >
-                      <BlackXIcon />
-                    </button>
-                  </div>
-                ))}
+                {images.map((image, index) => {
+                  const isFromBackend = typeof image === 'object' && image.file_path;
+                  const imageUrl = isFromBackend
+                    ? `http://localhost:3000/image/${image.file_path}`
+                    : typeof image === 'string'
+                      ? image
+                      : URL.createObjectURL(image); // fallback in case it's a File object
+
+                  return (
+                    <div key={index} className="relative w-[8rem] h-[8rem]">
+                      <img
+                        src={imageUrl}
+                        alt={`Image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+
+                      <button
+                        className="absolute top-1 right-1 bg-white rounded-full p-1 hover:bg-gray-200 cursor-pointer"
+                        onClick={() => {
+                          const newImages = [...images];
+
+                          // Revoke only blob URLs or File objects
+                          const toDelete = newImages[index];
+                          if (typeof toDelete === 'string' && toDelete.startsWith('blob:')) {
+                            URL.revokeObjectURL(toDelete);
+                          }
+
+                          newImages.splice(index, 1);
+                          setImages(newImages);
+                        }}
+                        aria-label="Remove image"
+                      >
+                        <BlackXIcon />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <div className="w-[28.8375rem] h-[27.3125rem] border-dashed border-black border-[1px] flex items-center justify-center">
