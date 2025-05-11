@@ -125,10 +125,13 @@ const MapEditor = () => {
                                       <ShowIconTwo />
                                       <span className='text-[#110D79] text-[.875rem]'>Show</span>
                                     </button>
-                                    <button className='flex items-center gap-[0.75rem]'>
+                                    <NavLink 
+                                      to={`${building._id}/edit-room/${room._id}`}
+                                      className='flex items-center gap-[0.75rem]'
+                                    >
                                       <EditIcon />
                                       <span className='text-[#1EAF34] text-[.875rem]'>Edit</span>
-                                    </button>
+                                    </NavLink>
                                     <button className='flex items-center gap-[0.75rem]'>
                                       <DeleteIcon />
                                       <span className='text-[#AF1E1E] text-[.875rem]'>Delete</span>

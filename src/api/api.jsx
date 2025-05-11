@@ -98,3 +98,15 @@ export const createRoom = async (data, buildingID, kioskID) => {
       throw error;
    }
 }
+
+export const fetchRoom = async (buildingID, roomID) => {
+   try {
+      const response = await axiosPrivate.get(`/room/${buildingID}/${roomID}`);
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}

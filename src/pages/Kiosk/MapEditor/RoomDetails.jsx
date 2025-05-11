@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { createRoom, fetchKiosks, fetchNavigationIcons } from '../../../api/api'
+import { createRoom, fetchKiosks, fetchNavigationIcons, fetchRoom } from '../../../api/api'
 import UploadIcon from '../../../assets/Icons/UploadIcon';
 import AddIcon from '../../../assets/Icons/AddIcon';
 import XIcon from '../../../assets/Icons/XIcon';
@@ -25,8 +25,10 @@ const RoomDetails = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const isEditMode = location.pathname.includes('edit-room');
 
   const { buildingID } = useParams();
+  const { roomID } = useParams();
 
   const [mode, setMode] = useState('');
 
@@ -74,6 +76,16 @@ const RoomDetails = () => {
     setNavigationGuide(navigationGuide.filter(guide => guide.id !== id));
   }
 
+  const removeLastPoint = () => {
+    if (currentPath.length > 1) {
+      setCurrentPath(prev => prev.slice(0, -1));
+    }
+  };
+
+  const resetPathPoints = () => {
+    setCurrentPath(prev => prev.slice(0, 1));
+  };
+
   const handleCancel = () => {
     navigate(-1);
   };
@@ -113,7 +125,7 @@ const RoomDetails = () => {
     }
   }
 
-  console.log('kioskID', selectedKiosk?.kioskID);
+  console.log('kioskID', roomID);
 
   useEffect(() => {
     const path = location.pathname;
@@ -132,15 +144,27 @@ const RoomDetails = () => {
     }
   }, [kiosksData]);
 
-  const removeLastPoint = () => {
-    if (currentPath.length > 1) {
-      setCurrentPath(prev => prev.slice(0, -1));
-    }
-  };
+  useEffect(() => {
+    if (isEditMode) {
+      const getRoomData = async () => {
+        try {
+          if (!roomID) throw new Error('Missing RoomID');
 
-  const resetPathPoints = () => {
-    setCurrentPath(prev => prev.slice(0, 1));
-  };
+          const response = await fetchRoom(buildingID, roomID);
+
+          console.log(response);
+          setRoomName(response.name);
+          setRoomDescription(response.description);
+          setRoomFloor(response.floor);
+        }
+        catch (error) {
+          console.error('Fetch error:', error);
+        }
+      };
+
+      getRoomData();
+    }
+  }, [isEditMode, buildingID, roomID]);
 
   if (kiosksLoading || navigationIconsLoading) return <div>Loading...</div>;
 
@@ -192,8 +216,10 @@ const RoomDetails = () => {
             <div className='w-[36.25dvw] h-[2.25rem] flex items-center border-solid border-[1px] border-black'>
               <input
                 type="text"
+                placeholder='Enter the room name here...'
                 className='px-[1rem] text-[.875rem] outline-none w-full'
                 onChange={(e) => setRoomName(e.target.value)}
+                value={roomName}
               />
             </div>
             <span className='font-bold text-[1rem]'>Floor Located</span>
@@ -203,15 +229,17 @@ const RoomDetails = () => {
                 min={1}
                 className='px-[1rem] text-[.875rem] outline-none w-full'
                 onChange={(e) => setRoomFloor(e.target.value)}
+                value={roomFloor}
               />
             </div>
             <span className='font-bold text-[1rem]'>Room Description</span>
             <textarea
               name=""
               id=""
-              placeholder='Enter your room description here...'
+              placeholder='Enter the room description here...'
               className='w-[36.25dvw]  flex items-center text-[.875rem] border-solid border-[1px] border-black p-[1rem] outline-none'
               onChange={(e) => setRoomDescription(e.target.value)}
+              value={roomDescription}
             />
             <span className='font-bold text-[1rem]'>Images</span>
             <div className='w-[36.25dvw] h-[7.5625rem] flex items-center justify-center border-dashed border-[1px] border-[#110D79] bg-[#D1D6FA] cursor-pointer relative'>
