@@ -38,9 +38,6 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
       // Track the current transform state
       let currentTransform = d3.zoomIdentity;
 
-      console.log('svg', svg);
-      console.log('g', g);
-
       // Add background
       const backgroundRect = g.append("rect")
          .attr("width", 5000)
@@ -122,7 +119,6 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
          // Check if we're in kiosk-mode before adding interactive features
          if (mode === undefined) {
-            console.log('bbobob')
             buildingPath
                .attr("cursor", "pointer")
                .on("click", function (event) {
@@ -188,7 +184,6 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
       // Set marker visibility based on mode
       if (mode === import.meta.env.VITE_ADD_KIOSK) {
-         console.log('bob')
          markerGroup.style("visibility", "hidden");
       }
       else if (mode === import.meta.env.VITE_EDIT_KIOSK) {
@@ -293,12 +288,8 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
          // Click handler for adding path points
          const handlePathClick = (event) => {
-            console.log('b');
-
             // Don't handle the click if it was already handled
             if (event.defaultPrevented) return;
-
-            console.log('c');
 
             // Prevent default to stop other handlers
             event.preventDefault();
@@ -318,8 +309,6 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
          // Add click handler to background for path creation
          if (backgroundRect.size() > 0) {
-            console.log('a');
-            console.log('backgroundRect', backgroundRect);
             backgroundRect.on("click", handlePathClick);
          }
 

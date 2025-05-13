@@ -13,9 +13,6 @@ const NavigationIconsModal = ({ icon, index, updateIcon }) => {
 
    const openModal = () => setIsOpen(true);
    const closeModal = () => setIsOpen(false);
-
-   console.log(navigationIcons);
-
    if (navigationIconsLoading) return <div>Loading...</div>;
 
    if (navigationIconsError) {

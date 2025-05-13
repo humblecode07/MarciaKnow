@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { createRoom, fetchKiosks, fetchNavigationIcons, fetchRoom } from '../../../api/api'
+import { createRoom, editRoom, fetchKiosks, fetchNavigationIcons, fetchRoom } from '../../../api/api'
 import UploadIcon from '../../../assets/Icons/UploadIcon';
 import AddIcon from '../../../assets/Icons/AddIcon';
 import XIcon from '../../../assets/Icons/XIcon';
@@ -25,6 +25,7 @@ const RoomDetails = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const path = location.pathname;
   const isEditMode = location.pathname.includes('edit-room');
 
   const { buildingID } = useParams();
@@ -42,8 +43,11 @@ const RoomDetails = () => {
 
   const handleImageUpload = (event) => {
     const files = Array.from(event.target.files);
-
-    setImages(prev => [...prev, ...files]);
+    const formatted = files.map(file => ({
+      type: 'file',
+      data: file
+    }));
+    setImages(prev => [...prev, ...formatted]);
   };
 
   const addNavigationGuideCard = () => {
@@ -101,21 +105,38 @@ const RoomDetails = () => {
     formData.append('path', JSON.stringify(currentPath));
     formData.append('navigationGuide', JSON.stringify(navigationGuide));
 
-    if (images.length > 0) {
-      for (let i = 0; i < images.length; i++) {
-        formData.append("images[]", images[i]); // not "images[]", unless backend expects array format
-      }
-    }
+    const storedImages = images.filter(img => img.type === 'stored');
+    const newFiles = images.filter(img => img.type === 'file');
+
+    const storedIDs = storedImages.map(img => img.data._id);
+    formData.append('imageIDs', JSON.stringify(storedIDs));
+
+    console.log( Array.isArray(storedIDs));
+
+    newFiles.forEach(imgObj => {
+      formData.append('images[]', imgObj.data); // or 'images[]' if backend expects array
+    });
 
     for (let pair of formData.entries()) {
       console.log(`${pair[0]}:`, pair[1]);
     }
 
     try {
-      const response = await createRoom(formData, buildingID, selectedKiosk.kioskID);
-      console.log(response);
-      alert('Room successfully created!');
-      navigate('/admin/map-editor');
+      let response = null;
+
+      if (path.includes("add-room")) {
+        response = await createRoom(formData, buildingID, selectedKiosk.kioskID);
+        console.log(response);
+        alert('Room successfully created!');
+        navigate('/admin/map-editor');
+      }
+      else if (path.includes("edit-room")) {
+        response = await editRoom(formData, buildingID, selectedKiosk.kioskID, roomID);
+        console.log(response);
+        alert('Room successfully edited!');
+        navigate('/admin/map-editor');
+      }
+
     }
     catch (error) {
       console.error('Failed to create room:', error);
@@ -125,15 +146,13 @@ const RoomDetails = () => {
   console.log('images', images);
 
   useEffect(() => {
-    const path = location.pathname;
-
     if (path.includes("add-room")) {
       setMode(import.meta.env.VITE_ADD_ROOM);
     }
     else if (path.includes("edit-room")) {
       setMode(import.meta.env.VITE_EDIT_ROOM);
     }
-  }, [location.pathname]);
+  }, [location.pathname, path]);
 
   useEffect(() => {
     if (kiosksData?.length > 0) {
@@ -153,7 +172,10 @@ const RoomDetails = () => {
           setRoomName(response.name);
           setRoomDescription(response.description);
           setRoomFloor(response.floor);
-          setImages([...response.image]);
+          setImages(response.image.map(img => ({
+            type: 'stored',
+            data: img
+          })));
           setCurrentPath([...response.navigationPath])
           setNavigationGuide([...response.navigationGuide]);
         }
@@ -307,12 +329,14 @@ const RoomDetails = () => {
             {images.length > 0 ? (
               <div className="w-[28.8375rem] border-dashed border-black border-[1px] p-4 flex flex-wrap gap-4">
                 {images.map((image, index) => {
-                  const isFromBackend = typeof image === 'object' && image.file_path;
+                  console.log(image);
+
+                  const isFromBackend = typeof image === 'object' && image.data.file_path;
                   const imageUrl = isFromBackend
-                    ? `http://localhost:3000/image/${image.file_path}`
-                    : typeof image === 'string'
-                      ? image
-                      : URL.createObjectURL(image); // fallback in case it's a File object
+                    ? `http://localhost:3000/image/${image.data.file_path}`
+                    : (image?.data instanceof File || image?.data instanceof Blob)
+                      ? URL.createObjectURL(image.data)
+                      : image;
 
                   return (
                     <div key={index} className="relative w-[8rem] h-[8rem]">
@@ -329,8 +353,8 @@ const RoomDetails = () => {
 
                           // Revoke only blob URLs or File objects
                           const toDelete = newImages[index];
-                          if (typeof toDelete === 'string' && toDelete.startsWith('blob:')) {
-                            URL.revokeObjectURL(toDelete);
+                          if ((toDelete instanceof File || toDelete instanceof Blob) && typeof toDelete === 'object') {
+                            URL.revokeObjectURL(imageUrl); // Revoke object URL based on imageUrl
                           }
 
                           newImages.splice(index, 1);
@@ -343,6 +367,7 @@ const RoomDetails = () => {
                     </div>
                   );
                 })}
+
               </div>
             ) : (
               <div className="w-[28.8375rem] h-[27.3125rem] border-dashed border-black border-[1px] flex items-center justify-center">

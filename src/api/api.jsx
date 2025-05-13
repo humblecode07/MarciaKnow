@@ -99,10 +99,33 @@ export const createRoom = async (data, buildingID, kioskID) => {
    }
 }
 
+export const editRoom = async (data, buildingID, kioskID, roomID) => {
+   try {
+      const response = await axiosPrivate.patch(`/room/${buildingID}/${kioskID}/${roomID}`, data);
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
 export const fetchRoom = async (buildingID, roomID) => {
    try {
       const response = await axiosPrivate.get(`/room/${buildingID}/${roomID}`);
 
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const deleteRoom = async (buildingID, kioskID, roomID) => {
+   try {
+      const response = await axiosPrivate.delete(`/room/${buildingID}/${kioskID}/${roomID}`);
       return response.data;
    }
    catch (error) {

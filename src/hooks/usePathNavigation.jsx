@@ -19,11 +19,7 @@ const usePathNavigation = (svgRef, mode, selectedKiosk, currentPath, setCurrentP
 
       const svg = d3.select(svgRef.current);
 
-      console.log('svg', svg);
-
       const g = svg.select("g");
-
-      console.log('g', g);
 
       if (mode !== import.meta.env.VITE_ADD_ROOM) {
          g.selectAll(".temp-path").remove();
@@ -89,12 +85,8 @@ const usePathNavigation = (svgRef, mode, selectedKiosk, currentPath, setCurrentP
       };
 
       const handlePathClick = (event) => {
-         console.log('b');
-
          // Don't handle the click if it was already handled
          if (event.defaultPrevented) return;
-
-         console.log('c');
 
          // Prevent default to stop other handlers
          event.preventDefault();
@@ -114,12 +106,7 @@ const usePathNavigation = (svgRef, mode, selectedKiosk, currentPath, setCurrentP
       // Add the click handler
       const backgroundRect = g.select("rect"); // Get the background rectangle
       
-      console.log('g', g);
-      console.log('backgroundRect', backgroundRect.size());
-
       if (backgroundRect.size() > 0) {
-         console.log('a');
-         console.log('backgroundRect', backgroundRect);
          backgroundRect.on("click", handlePathClick);
       }
 

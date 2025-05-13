@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { fetchBuildings } from '../../api/api';
+import { deleteRoom, fetchBuildings } from '../../api/api';
 import AddIcon from '../../assets/Icons/AddIcon';
 import EditIcon from '../../assets/Icons/EditIcon';
 import ShowIcon from '../../assets/Icons/ShowIcon';
@@ -52,7 +52,24 @@ const MapEditor = () => {
     }));
   };
 
-  console.log(buildings);
+  const handleRoomDelete = async (e, buildingID, kioskID, roomID) => {
+    e.preventDefault();
+
+    const confirmDelete = window.confirm("Are you sure you want to delete this room?");
+    if (!confirmDelete) return;
+
+    try {
+      const response = await deleteRoom(buildingID, kioskID, roomID);
+      console.log(response);
+      alert("Room deleted successfully!");
+    } catch (error) {
+      console.error("Failed to delete room:", error);
+      alert("Failed to delete room.");
+    }
+  };
+
+
+  console.log(Object.values(activeTabsByBuilding)[0]);
 
   return (
     <div className="w-[73.98dvw] flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem]">
@@ -125,14 +142,17 @@ const MapEditor = () => {
                                       <ShowIconTwo />
                                       <span className='text-[#110D79] text-[.875rem]'>Show</span>
                                     </button>
-                                    <NavLink 
+                                    <NavLink
                                       to={`${building._id}/edit-room/${room._id}`}
                                       className='flex items-center gap-[0.75rem]'
                                     >
                                       <EditIcon />
                                       <span className='text-[#1EAF34] text-[.875rem]'>Edit</span>
                                     </NavLink>
-                                    <button className='flex items-center gap-[0.75rem]'>
+                                    <button
+                                      onClick={(e) => handleRoomDelete(e, building._id, activeTab, room._id)}
+                                      className='flex items-center gap-[0.75rem] cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#991515]'
+                                    >
                                       <DeleteIcon />
                                       <span className='text-[#AF1E1E] text-[.875rem]'>Delete</span>
                                     </button>
