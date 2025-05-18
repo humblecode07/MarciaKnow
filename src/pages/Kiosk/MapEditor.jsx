@@ -99,10 +99,13 @@ const MapEditor = () => {
                     <AddIcon />
                     <span className='font-bold text-[.75rem]'>Add a Room</span>
                   </NavLink>
-                  <button className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#1EAF34] border-solid border-[1px] border-[#1EAF34] bg-[#D1FAE5] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#A6F4C5]'>
+                  <NavLink 
+                    to={`${building._id}/edit-building/${activeTab}`}
+                    className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#1EAF34] border-solid border-[1px] border-[#1EAF34] bg-[#D1FAE5] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#A6F4C5]'
+                  >
                     <EditIcon />
                     <span className='font-bold text-[.75rem]'>Edit</span>
-                  </button>
+                  </NavLink>
                   <button
                     className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#DBB341] border-solid border-[1px] border-[#DBB341] bg-[#FAF5D1] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#F4E7A3]'
                     onClick={() => toggleBuilding(building.id || building._id)}
@@ -143,7 +146,7 @@ const MapEditor = () => {
                                       <span className='text-[#110D79] text-[.875rem]'>Show</span>
                                     </button>
                                     <NavLink
-                                      to={`${building._id}/edit-room/${room._id}`}
+                                      to={`${building._id}/edit-room/${activeTab}/${room._id}`}
                                       className='flex items-center gap-[0.75rem]'
                                     >
                                       <EditIcon />

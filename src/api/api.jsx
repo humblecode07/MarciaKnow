@@ -17,6 +17,18 @@ export const fetchBuildings = async () => {
    }
 };
 
+export const fetchBuilding = async (buildingID) => {
+   try {
+      const response = await axiosPrivate.get(`/building/${buildingID}`);
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
 export const fetchKiosks = async () => {
    try {
       const response = await axiosPrivate.get("/kiosk");
@@ -126,6 +138,17 @@ export const fetchRoom = async (buildingID, roomID) => {
 export const deleteRoom = async (buildingID, kioskID, roomID) => {
    try {
       const response = await axiosPrivate.delete(`/room/${buildingID}/${kioskID}/${roomID}`);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const editBuilding = async (data, buildingID, kioskID) => {
+   try {
+      const response = await axiosPrivate.patch(`/building/${buildingID}/${kioskID}`, data);
       return response.data;
    }
    catch (error) {

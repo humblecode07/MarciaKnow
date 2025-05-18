@@ -227,6 +227,8 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          g.selectAll(".temp-path").remove();
          g.selectAll(".path-point-marker").remove();
 
+         console.log(currentPath);
+
          // Create a new temporary path for drawing
          let drawingPath = g.append("path")
             .attr("class", "temp-path")
