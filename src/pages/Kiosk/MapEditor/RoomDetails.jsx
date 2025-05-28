@@ -153,35 +153,35 @@ const RoomDetails = () => {
   console.log('images', images);
 
   useEffect(() => {
-    const fetchBuildingData = async () => {
-      try {
-        const response = await fetchBuilding(buildingID);
-        console.log('Fetched building data:', response);
+    if (isEditBuildingMode) {
+      const fetchBuildingData = async () => {
+        try {
+          const response = await fetchBuilding(buildingID);
+          console.log('Fetched building data:', response);
 
-        setBuildingName(response.name);
+          setBuildingName(response.name);
 
-        if (isEditBuildingMode) {
-          setName(response.name);
-          setDescription(response.description);
-          setFloor(response.numberOfFloor);
-          setImages(response.image.map(img => ({
-            type: 'stored',
-            data: img
-          })));
-          setCurrentPath(response.navigationPath[kioskID])
-          setNavigationGuide([...response.navigationGuide[kioskID]]);
+          if (isEditBuildingMode) {
+            setName(response.name);
+            setDescription(response.description);
+            setFloor(response.numberOfFloor);
+            setImages(response.image.map(img => ({
+              type: 'stored',
+              data: img
+            })));
+            setCurrentPath(response.navigationPath[kioskID])
+            setNavigationGuide([...response.navigationGuide[kioskID]]);
+          }
+        }
+        catch (error) {
+          console.error('Failed to fetch building data:', error);
         }
       }
-      catch (error) {
-        console.error('Failed to fetch building data:', error);
-      }
+
+      fetchBuildingData();
     }
 
-    fetchBuildingData();
-
   }, [buildingID, isEditBuildingMode, kioskID])
-
-  console.log('currentPath', currentPath);
 
   useEffect(() => {
     if (kiosksData?.length > 0) {
@@ -195,6 +195,8 @@ const RoomDetails = () => {
       setSelectedKiosk(foundKiosk || null);
     }
   }, [kiosksData, kioskID]);
+
+  console.log(isEditRoomMode);
 
   useEffect(() => {
     if (isEditRoomMode) {
@@ -215,6 +217,7 @@ const RoomDetails = () => {
           })));
 
           setNavigationGuide([...response.navigationGuide]);
+          setCurrentPath(response.navigationPath);
         }
         catch (error) {
           console.error('Fetch error:', error);
@@ -223,9 +226,9 @@ const RoomDetails = () => {
 
       getRoomData();
     }
-  }, [isEditRoomMode, buildingID, roomID]);
+  }, [isEditRoomMode, buildingID, roomID, kioskID]);
 
-  console.log(selectedKiosk);
+  console.log(currentPath);
 
   if (kiosksLoading || navigationIconsLoading) return <div>Loading...</div>;
 

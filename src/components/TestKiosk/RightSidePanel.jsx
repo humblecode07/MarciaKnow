@@ -4,7 +4,7 @@ import yangaLogo from '../../../public/Photos/yangaLogo.png'
 
 const RightSidePanel = () => {
    return (
-      <section className='w-[18.75rem] h-[49.4375rem] flex flex-col bg-[#FBFCF8] shadow-md relative font-righteous'>
+      <section className='w-[18.75rem] h-[49.4375rem] flex flex-col bg-[#FBFCF8] shadow-md relative font-righteous mt-[3.25rem]'>
          <div className='w-full h-[3.5rem] bg-[#FBF9F6] shadow-md flex items-center justify-between px-[.75rem]'>
             <div className='flex gap-[0.625rem] items-center'>
                <img

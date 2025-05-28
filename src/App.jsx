@@ -13,11 +13,30 @@ import CampusMap from "./components/TestKiosk/CampusMap"
 import KioskDetails from "./pages/Kiosk/KioskSettings/KioskDetails"
 import BuildingDetails from "./pages/Kiosk/MapEditor/BuildingDetails"
 import RoomDetails from "./pages/Kiosk/MapEditor/RoomDetails"
+import ScanGuide from "./pages/ScanGuide"
+import ClientKiosk from "./pages/Kiosk/ClientKiosk"
+import KioskHome from "./pages/Kiosk/KioskHome"
 
 const router = createBrowserRouter([
    {
+      path: '/',
+      element: <KioskHome />
+   },
+   {
+      path: '/:kioskID',
+      element: <ClientKiosk />
+   },
+   {
       path: '/login',
       element: <Login />
+   },
+   {
+      path: 'qr-code/:buildingID/edit-room/:kioskID/:roomID',
+      element: <ScanGuide />
+   },
+   {
+      path: 'qr-code/:buildingID/edit-room/:kioskID',
+      element: <ScanGuide />
    },
    {
       path: '/admin',

@@ -18,8 +18,7 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          setY(coordinates.y);
       }
    }, [path, coordinates]);
-
-
+   
    useEffect(() => {
       if (!svgRef.current || buildings.length === 0) return;
 
@@ -118,7 +117,7 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
             .attr("data-description", building.description);
 
          // Check if we're in kiosk-mode before adding interactive features
-         if (mode === undefined) {
+         if (mode === import.meta.env.VITE_TEST_KIOSK) {
             buildingPath
                .attr("cursor", "pointer")
                .on("click", function (event) {
@@ -141,7 +140,8 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
                      description: d3.select(this).attr("data-description"),
                      existingRoom: building.existingRoom,
                      image: building.image,
-                     numOfFloors: building.numberOfFloor
+                     numOfFloors: building.numberOfFloor,
+                     _id: building._id
                   });
 
                   // Don't reset zoom when selecting a building
@@ -222,7 +222,7 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          .attr("stroke", "none");
 
       // Handle path drawing functionality in ADD_ROOM mode
-      if (mode === import.meta.env.VITE_ADD_ROOM) {
+      if (mode === import.meta.env.VITE_ADD_ROOM || mode === import.meta.env.VITE_TEST_KIOSK || mode === import.meta.env.VITE_QR_CODE_KIOSK) {
          // Remove any existing temporary paths and markers
          g.selectAll(".temp-path").remove();
          g.selectAll(".path-point-marker").remove();
@@ -288,36 +288,38 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
             });
          };
 
-         // Click handler for adding path points
-         const handlePathClick = (event) => {
-            // Don't handle the click if it was already handled
-            if (event.defaultPrevented) return;
+         if (mode === import.meta.env.VITE_ADD_ROOM) {
+            // Click handler for adding path points
+            const handlePathClick = (event) => {
+               // Don't handle the click if it was already handled
+               if (event.defaultPrevented) return;
 
-            // Prevent default to stop other handlers
-            event.preventDefault();
-            event.stopPropagation();
+               // Prevent default to stop other handlers
+               event.preventDefault();
+               event.stopPropagation();
 
-            // Get coordinates relative to the SVG
-            const svgPoint = svg.node().createSVGPoint();
-            svgPoint.x = event.clientX;
-            svgPoint.y = event.clientY;
+               // Get coordinates relative to the SVG
+               const svgPoint = svg.node().createSVGPoint();
+               svgPoint.x = event.clientX;
+               svgPoint.y = event.clientY;
 
-            // Transform to account for zoom/pan
-            const transformedPoint = svgPoint.matrixTransform(g.node().getScreenCTM().inverse());
+               // Transform to account for zoom/pan
+               const transformedPoint = svgPoint.matrixTransform(g.node().getScreenCTM().inverse());
 
-            // Add point to the current path
-            setCurrentPath(prev => [...prev, { x: transformedPoint.x, y: transformedPoint.y }]);
-         };
+               // Add point to the current path
+               setCurrentPath(prev => [...prev, { x: transformedPoint.x, y: transformedPoint.y }]);
+            };
 
-         // Add click handler to background for path creation
-         if (backgroundRect.size() > 0) {
-            backgroundRect.on("click", handlePathClick);
+            // Add click handler to background for path creation
+            if (backgroundRect.size() > 0) {
+               backgroundRect.on("click", handlePathClick);
+            }
          }
 
          // Initial update of path display
          updatePath();
-      } else {
-         // If not in ADD_ROOM mode, remove temporary paths and markers
+      }
+      else {
          g.selectAll(".temp-path").remove();
          g.selectAll(".path-point-marker").remove();
       }
@@ -391,13 +393,15 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
    }, [svgRef, selectedBuilding, onSelectBuilding, buildings, mode, onPositionSelect, x, y, currentPath, setCurrentPath, selectedKiosk]);
 
    useEffect(() => {
-      if (selectedKiosk && mode === import.meta.env.VITE_ADD_ROOM) {
+      if (selectedKiosk && mode === import.meta.env.VITE_ADD_ROOM || selectedKiosk && mode === import.meta.env.VITE_TEST_KIOSK || selectedKiosk && mode === import.meta.env.VITE_QR_CODE_KIOSK) {
          setCurrentPath([{
             x: selectedKiosk.coordinates.x,
             y: selectedKiosk.coordinates.y
          }]);
       }
    }, [selectedKiosk, mode, setCurrentPath]);
+
+   console.log(currentPath);
 
    // Helper function for rendering destination markers
    const renderDestinationMarker = (g, x, y, color, label) => {

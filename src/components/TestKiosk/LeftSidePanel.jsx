@@ -6,7 +6,7 @@ import yangaLogo from '../../../public/Photos/yangaLogo.png'
 
 const LeftSidePanel = () => {
    return (
-      <section className='w-[18.75rem] h-[49.4375rem] py-[1.125rem] flex flex-col bg-[#FBFCF8] shadow-md relative'>
+      <section className='w-[18.75rem] h-[49.4375rem] py-[1.125rem] flex flex-col bg-[#FBFCF8] shadow-md relative mt-[3.25rem]'>
          <div className="flex gap-[.5rem] px-[1rem]">
             <img
                src={yangaLogo}
