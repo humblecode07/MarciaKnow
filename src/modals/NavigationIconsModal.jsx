@@ -35,7 +35,7 @@ const NavigationIconsModal = ({ icon, index, updateIcon }) => {
          {isOpen && (
             <div className='fixed inset-0 z-50 flex items-center justify-center font-roboto'>
                <div className="w-full h-full absolute bg-white opacity-50"></div>
-               <div className="w-[39.6875rem] h-[23.5rem] px-[1.625rem] py-[1.75rem] flex flex-col gap-[1.5625rem] bg-white border-solid border-[1px] border-black shadow-lg relative">
+               <div className="w-[39.6875rem] px-[1.625rem] py-[1.75rem] flex flex-col gap-[1.5625rem] bg-white border-solid border-[1px] border-black shadow-lg relative">
                   <div className='w-full flex justify-between items-center'>
                      <div className='flex flex-col'>
                         <h2 className="text-[1rem] font-bold">Select Navigation Icon</h2>
@@ -48,28 +48,25 @@ const NavigationIconsModal = ({ icon, index, updateIcon }) => {
                         <XTwoIcon />
                      </button>
                   </div>
-                  <div className='flex gap-[0.914375rem]'>
+                  <div className='flex gap-[0.914375rem] flex-wrap'>
                      {navigationIcons.data.map((icons) => {
                         return (
                            <div
-                              className='w-[1.95875rem] h-[2rem] border border-black flex items-center justify-center transition-transform duration-200 ease-in-out hover:border-[#A855F7] hover:scale-110 cursor-pointer'
+                              className='w-[3rem] h-[3rem] border border-black flex items-center justify-center transition-transform duration-200 ease-in-out hover:border-[#A855F7] hover:scale-110 cursor-pointer'
                               key={icons._id}
                               onClick={() => updateIcon("ICON", index, icons.icon)}
                            >
                               <img
                                  src={icons.icon}
                                  alt="nav_icon"
-                                 className='w-[1.125rem] h-[1rem]'
+                                 className='w-[1.75rem] h-[1.75rem]'
                               />
                            </div>
-
                         );
                      })}
-
                   </div>
                </div>
             </div>
-
          )}
       </>
    )

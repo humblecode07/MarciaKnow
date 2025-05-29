@@ -16,6 +16,7 @@ import RoomDetails from "./pages/Kiosk/MapEditor/RoomDetails"
 import ScanGuide from "./pages/ScanGuide"
 import ClientKiosk from "./pages/Kiosk/ClientKiosk"
 import KioskHome from "./pages/Kiosk/KioskHome"
+import { AuthProvider } from "./context/AuthContext"
 
 const router = createBrowserRouter([
    {
@@ -100,7 +101,9 @@ const router = createBrowserRouter([
 
 function App() {
    return (
-      <RouterProvider router={router} />
+      <AuthProvider >
+         <RouterProvider router={router} />
+      </AuthProvider>
    )
 }
 

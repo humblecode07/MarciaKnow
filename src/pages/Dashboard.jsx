@@ -4,7 +4,7 @@ import CampusMap from '../components/TestKiosk/CampusMap'
 const Dashboard = () => {
   return (
     <div>
-      
+      Dashboard
     </div>
   )
 }

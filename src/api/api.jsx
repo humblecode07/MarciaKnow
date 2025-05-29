@@ -17,6 +17,18 @@ export const fetchBuildings = async () => {
    }
 };
 
+export const fetchBuildingsFromSpecificKiosk = async (kioskID) => {
+   try {
+      const response = await axiosPrivate.get(`/building/get/${kioskID}`);
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
 export const fetchBuilding = async (buildingID) => {
    try {
       const response = await axiosPrivate.get(`/building/${buildingID}`);
@@ -149,6 +161,18 @@ export const fetchRoom = async (buildingID, roomID) => {
 export const fetchRooms = async () => {
    try {
       const response = await axiosPrivate.get(`/room`);
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const fetchRoomsFromKiosk = async (kioskID) => {
+   try {
+      const response = await axiosPrivate.get(`/room/${kioskID}`);
 
       return response.data;
    }

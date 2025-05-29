@@ -5,17 +5,17 @@ import SearchIcon from "../../assets/Icons/SearchIcon"
 import yangaLogo from '../../../public/Photos/yangaLogo.png'
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { fetchBuildings, fetchRooms } from "../../api/api"
+import { fetchBuildings, fetchBuildingsFromSpecificKiosk, fetchRooms, fetchRoomsFromKiosk } from "../../api/api"
 
 const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, setCurrentPath }) => {
    const { data: buildings, error: buildingsError, isLoading: buildingsLoading } = useQuery({
       queryKey: ['buildings'],
-      queryFn: fetchBuildings,
+      queryFn: () => fetchBuildingsFromSpecificKiosk(kiosk.kioskID)
    });
 
    const { data: rooms, error: roomsError, isLoading: roomsLoading } = useQuery({
       queryKey: ['rooms'],
-      queryFn: fetchRooms,
+      queryFn: () => fetchRoomsFromKiosk(kiosk.kioskID),
    });
 
    const [search, setSearch] = useState('');
