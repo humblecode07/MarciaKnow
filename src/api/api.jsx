@@ -87,6 +87,17 @@ export const deleteKiosk = async (kioskID) => {
    }
 }
 
+export const pingKiosk = async (kioskID) => {
+   try {
+      const response = await axiosPrivate.post(`kiosk/ping/${kioskID}`);
+      console.log('Kiosk pinged successfully', response.data);
+      return response.data;
+   }
+   catch (err) {
+      console.error('Kiosk ping failed:', err.message);
+   }
+}
+
 export const fetchNavigationIcons = async () => {
    try {
       const response = await axiosPrivate.get("/icon");
@@ -135,6 +146,18 @@ export const fetchRoom = async (buildingID, roomID) => {
    }
 }
 
+export const fetchRooms = async () => {
+   try {
+      const response = await axiosPrivate.get(`/room`);
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
 export const deleteRoom = async (buildingID, kioskID, roomID) => {
    try {
       const response = await axiosPrivate.delete(`/room/${buildingID}/${kioskID}/${roomID}`);
@@ -153,6 +176,19 @@ export const editBuilding = async (data, buildingID, kioskID) => {
    }
    catch (error) {
       console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const askGroq = async (message, kioskID) => {
+   try {
+      const response = await axiosPrivate.post(`/groq/ask/${kioskID}`, {
+         question: message
+      });
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during Groq API call', error);
       throw error;
    }
 }

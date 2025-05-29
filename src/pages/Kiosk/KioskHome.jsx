@@ -10,7 +10,6 @@ const KioskHome = () => {
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [error, setError] = useState('');
 
-  // Simulated database of valid kiosk keys
   const validKeys = [
     'K447F8Y9',
     'K233N8Y1',

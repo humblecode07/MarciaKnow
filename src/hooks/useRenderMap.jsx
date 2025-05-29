@@ -7,6 +7,7 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
    const path = location.pathname;
 
    const zoomTransformRef = useRef(d3.zoomIdentity);
+   const zoomBehaviorRef = useRef(null);
 
    const [x, setX] = useState(0);
    const [y, setY] = useState(0);
@@ -18,7 +19,67 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          setY(coordinates.y);
       }
    }, [path, coordinates]);
-   
+
+   // Helper function to calculate bounding box of path points
+   const getPathBounds = (pathPoints) => {
+      if (!pathPoints || pathPoints.length === 0) return null;
+
+      const xCoords = pathPoints.map(p => p.x);
+      const yCoords = pathPoints.map(p => p.y);
+
+      return {
+         minX: Math.min(...xCoords),
+         maxX: Math.max(...xCoords),
+         minY: Math.min(...yCoords),
+         maxY: Math.max(...yCoords)
+      };
+   };
+
+   // Function to zoom to fit the navigation path
+   const zoomToPath = (pathPoints, svg, zoomBehavior, padding = 50) => {
+      if (!pathPoints || pathPoints.length === 0 || !svg || !zoomBehavior) return;
+
+      const bounds = getPathBounds(pathPoints);
+      if (!bounds) return;
+
+      // Get SVG dimensions
+      const svgNode = svg.node();
+      const svgRect = svgNode.getBoundingClientRect();
+      const svgWidth = svgRect.width;
+      const svgHeight = svgRect.height;
+
+      // Calculate path dimensions
+      const pathWidth = bounds.maxX - bounds.minX;
+      const pathHeight = bounds.maxY - bounds.minY;
+
+      // Add padding to the bounds
+      const paddedWidth = pathWidth + (padding * 2);
+      const paddedHeight = pathHeight + (padding * 2);
+
+      // Calculate scale to fit the path within the SVG
+      const scaleX = svgWidth / paddedWidth;
+      const scaleY = svgHeight / paddedHeight;
+      const scale = Math.min(scaleX, scaleY, 3); // Don't exceed max zoom level
+
+      // Calculate center point of the path
+      const centerX = bounds.minX + (pathWidth / 2);
+      const centerY = bounds.minY + (pathHeight / 2);
+
+      // Calculate translation to center the path
+      const translateX = (svgWidth / 2) - (centerX * scale);
+      const translateY = (svgHeight / 2) - (centerY * scale);
+
+      // Create the transform
+      const transform = d3.zoomIdentity
+         .translate(translateX, translateY)
+         .scale(scale);
+
+      // Apply the transform with smooth transition
+      svg.transition()
+         .duration(1000)
+         .call(zoomBehavior.transform, transform);
+   };
+
    useEffect(() => {
       if (!svgRef.current || buildings.length === 0) return;
 
@@ -117,7 +178,7 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
             .attr("data-description", building.description);
 
          // Check if we're in kiosk-mode before adding interactive features
-         if (mode === import.meta.env.VITE_TEST_KIOSK) {
+         if (mode === import.meta.env.VITE_TEST_KIOSK || mode === import.meta.env.VITE_CLIENT_KIOSK) {
             buildingPath
                .attr("cursor", "pointer")
                .on("click", function (event) {
@@ -141,8 +202,11 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
                      existingRoom: building.existingRoom,
                      image: building.image,
                      numOfFloors: building.numberOfFloor,
-                     _id: building._id
+                     _id: building._id,
+                     navigationGuide: building.navigationGuide,
+                     navigationPath: building.navigationPath
                   });
+
 
                   // Don't reset zoom when selecting a building
                })
@@ -222,12 +286,10 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          .attr("stroke", "none");
 
       // Handle path drawing functionality in ADD_ROOM mode
-      if (mode === import.meta.env.VITE_ADD_ROOM || mode === import.meta.env.VITE_TEST_KIOSK || mode === import.meta.env.VITE_QR_CODE_KIOSK) {
+      if (mode === import.meta.env.VITE_ADD_ROOM || mode === import.meta.env.VITE_TEST_KIOSK || mode === import.meta.env.VITE_QR_CODE_KIOSK || mode === import.meta.env.VITE_CLIENT_KIOSK) {
          // Remove any existing temporary paths and markers
          g.selectAll(".temp-path").remove();
          g.selectAll(".path-point-marker").remove();
-
-         console.log(currentPath);
 
          // Create a new temporary path for drawing
          let drawingPath = g.append("path")
@@ -333,6 +395,9 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
             g.attr("transform", event.transform);
          });
 
+      // Store zoom behavior in ref for external access
+      zoomBehaviorRef.current = zoom;
+
       // Apply zoom behavior to SVG
       svg.call(zoom);
 
@@ -383,6 +448,17 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
             .style("visibility", "visible");
       }
 
+      // Auto-zoom to navigation path when it's displayed
+      if (currentPath && currentPath.length >= 2 &&
+         (mode === import.meta.env.VITE_TEST_KIOSK ||
+            mode === import.meta.env.VITE_QR_CODE_KIOSK ||
+            mode === import.meta.env.VITE_CLIENT_KIOSK)) {
+         // Add a small delay to ensure the path is rendered first
+         setTimeout(() => {
+            zoomToPath(currentPath, svg, zoom, 100); // 100px padding around the path
+         }, 100);
+      }
+
       return () => {
          // Remove event handlers on cleanup
          svg.on("click", null);
@@ -393,15 +469,13 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
    }, [svgRef, selectedBuilding, onSelectBuilding, buildings, mode, onPositionSelect, x, y, currentPath, setCurrentPath, selectedKiosk]);
 
    useEffect(() => {
-      if (selectedKiosk && mode === import.meta.env.VITE_ADD_ROOM || selectedKiosk && mode === import.meta.env.VITE_TEST_KIOSK || selectedKiosk && mode === import.meta.env.VITE_QR_CODE_KIOSK) {
+      if (selectedKiosk && mode === import.meta.env.VITE_ADD_ROOM || selectedKiosk && mode === import.meta.env.VITE_TEST_KIOSK || selectedKiosk && mode === import.meta.env.VITE_QR_CODE_KIOSK || selectedKiosk && mode === import.meta.env.VITE_CLIENT_KIOSK) {
          setCurrentPath([{
             x: selectedKiosk.coordinates.x,
             y: selectedKiosk.coordinates.y
          }]);
       }
    }, [selectedKiosk, mode, setCurrentPath]);
-
-   console.log(currentPath);
 
    // Helper function for rendering destination markers
    const renderDestinationMarker = (g, x, y, color, label) => {
@@ -446,6 +520,17 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
       return markerGroup;
    };
+
+   // Expose the zoom function for external use (optional)
+   const zoomToNavigationPath = (pathPoints, padding = 100) => {
+      const svg = d3.select(svgRef.current);
+      if (zoomBehaviorRef.current && svg && pathPoints && pathPoints.length >= 2) {
+         zoomToPath(pathPoints, svg, zoomBehaviorRef.current, padding);
+      }
+   };
+
+   // Return the zoom function in case parent component wants to trigger it manually
+   return { zoomToNavigationPath };
 }
 
 export default useRenderMap
