@@ -17,6 +17,11 @@ import ScanGuide from "./pages/ScanGuide"
 import ClientKiosk from "./pages/Kiosk/ClientKiosk"
 import KioskHome from "./pages/Kiosk/KioskHome"
 import { AuthProvider } from "./context/AuthContext"
+import PersistLogin from "./pages/PersistLogin"
+import RequireAuth from "./components/RequireAuth"
+
+const superAdminRole = Number(import.meta.env.VITE_ROLE_SUPER_ADMIN);
+const adminRole = Number(import.meta.env.VITE_ROLE_ADMIN);
 
 const router = createBrowserRouter([
    {
@@ -40,63 +45,69 @@ const router = createBrowserRouter([
       element: <ScanGuide />
    },
    {
-      path: '/admin',
-      element: <AdminLayout />,
+      path: '*',
+      element: <PersistLogin />,
       children: [
          {
-            path: '',
-            element: <Dashboard />
-         },
-         {
-            path: 'test-kiosk',
-            element: <TestKiosk />
-         },
-         {
-            path: 'map-editor',
-            element: <MapEditor />
-         },
-         {
-            path: 'map-editor/:buildingID/edit-building/:kioskID',
-            element: <RoomDetails />
-         },
-         {
-            path: 'map-editor/:buildingID/add-room',
-            element: <RoomDetails />
-         },
-         {
-            path: 'map-editor/:buildingID/edit-room/:kioskID/:roomID',
-            element: <RoomDetails />
-         },
-         {
-            path: 'kiosk-settings',
-            element: <KioskSettings />
-         },
-         {
-            path: 'kiosk-settings/add-kiosk',
-            element: <KioskDetails />
-         },
-         {
-            path: 'kiosk-settings/edit-kiosk/:kioskID',
-            element: <KioskDetails />
-         },
-         {
-            path: 'reports',
-            element: <Reports />
-         },
-         {
-            path: 'users',
-            element: <Users />
-         },
-         {
-            path: 'profile',
-            element: <Profile />
-         },
+            path: 'admin',
+            element: (
+               <RequireAuth allowedRoles={[adminRole, superAdminRole]} >
+                  <AdminLayout />,
+               </RequireAuth>
+            ),
+            children: [
+               {
+                  path: '',
+                  element: <Dashboard />
+               },
+               {
+                  path: 'test-kiosk',
+                  element: <TestKiosk />
+               },
+               {
+                  path: 'map-editor',
+                  element: <MapEditor />
+               },
+               {
+                  path: 'map-editor/:buildingID/edit-building/:kioskID',
+                  element: <RoomDetails />
+               },
+               {
+                  path: 'map-editor/:buildingID/add-room',
+                  element: <RoomDetails />
+               },
+               {
+                  path: 'map-editor/:buildingID/edit-room/:kioskID/:roomID',
+                  element: <RoomDetails />
+               },
+               {
+                  path: 'kiosk-settings',
+                  element: <KioskSettings />
+               },
+               {
+                  path: 'kiosk-settings/add-kiosk',
+                  element: <KioskDetails />
+               },
+               {
+                  path: 'kiosk-settings/edit-kiosk/:kioskID',
+                  element: <KioskDetails />
+               },
+               {
+                  path: 'reports',
+                  element: <Reports />
+               },
+               {
+                  path: 'users',
+                  element: <Users />
+               },
+               {
+                  path: 'profile',
+                  element: <Profile />
+               },
+            ]
+         }
       ]
    },
-   {
-      path: '/sample',
-      element: <CampusMap />
-   }
 ])
 
 function App() {

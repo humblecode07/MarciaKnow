@@ -1,8 +1,14 @@
 import React, { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import useLogout from '../hooks/useLogout';
+import LogoutModal from '../modals/LogoutModal';
 
 const Sidebar = () => {
+   const logout = useLogout();
+   const navigate = useNavigate();
+
    const [isOpen, setIsOpen] = useState(false);
+   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
    const location = useLocation();
 
    const [isKioskSelected, setIsKioskSelected] = useState(false);
@@ -24,6 +30,18 @@ const Sidebar = () => {
       return currentPath.includes(path);
    }
 
+   const handleLogoutClick = () => {
+      setIsLogoutModalOpen(true);
+   }
+
+   const handleLogoutConfirm = () => {
+      setIsLogoutModalOpen(false);
+      logout(); 
+   }
+
+    const handleLogoutCancel = () => {
+      setIsLogoutModalOpen(false);
+   }
 
    return (
       <>
@@ -171,18 +189,25 @@ const Sidebar = () => {
                      </div>
                   </NavLink>
                   <NavLink className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer bg-white select-none hover:bg-gray-200`}>
-                     <div className='w-[10.5625rem] flex items-center gap-[0.875rem] px-[.875rem]'>
-                        <div className='w-[1.875rem] h-[1.875rem] rounded-full bg-[#110d79] flex justify-center items-center'>
-                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M1.55556 14C1.12778 14 0.761704 13.8478 0.457333 13.5434C0.152963 13.2391 0.000518519 12.8727 0 12.4444V1.55556C0 1.12778 0.152444 0.761704 0.457333 0.457333C0.762222 0.152963 1.1283 0.000518519 1.55556 0H7V1.55556H1.55556V12.4444H7V14H1.55556ZM10.1111 10.8889L9.04167 9.76111L11.025 7.77778H4.66667V6.22222H11.025L9.04167 4.23889L10.1111 3.11111L14 7L10.1111 10.8889Z" fill="#ffffff" />
-                           </svg>
+                     <button onClick={handleLogoutClick} className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer bg-white select-none hover:bg-gray-200`}>
+                        <div className='w-[10.5625rem] flex items-center gap-[0.875rem] px-[.875rem]'>
+                           <div className='w-[1.875rem] h-[1.875rem] rounded-full bg-[#110d79] flex justify-center items-center'>
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                 <path d="M1.55556 14C1.12778 14 0.761704 13.8478 0.457333 13.5434C0.152963 13.2391 0.000518519 12.8727 0 12.4444V1.55556C0 1.12778 0.152444 0.761704 0.457333 0.457333C0.762222 0.152963 1.1283 0.000518519 1.55556 0H7V1.55556H1.55556V12.4444H7V14H1.55556ZM10.1111 10.8889L9.04167 9.76111L11.025 7.77778H4.66667V6.22222H11.025L9.04167 4.23889L10.1111 3.11111L14 7L10.1111 10.8889Z" fill="#ffffff" />
+                              </svg>
+                           </div>
+                           <span className={`font-roboto text-[.875rem] text-black`}>Logout</span>
                         </div>
-                        <span className={`font-roboto text-[.875rem] text-black`}>Logout</span>
-                     </div>
+                     </button>
                   </NavLink>
                </ul>
             </div>
          </div>
+          <LogoutModal
+            isOpen={isLogoutModalOpen}
+            onClose={handleLogoutCancel}
+            onConfirm={handleLogoutConfirm}
+         />
       </>
    )
 }

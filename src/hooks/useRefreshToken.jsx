@@ -2,13 +2,13 @@ import { axiosPrivate } from '../api/api';
 import useAuth from './useAuth';
 
 const useRefreshToken = () => {
-    const { setUser } = useAuth();
+    const { setAdmin } = useAuth();
 
     const refresh = async () => {
         const response = await axiosPrivate.get('/refresh', {
             withCredentials: true
         });
-        setUser(prev => {
+        setAdmin(prev => {
             console.log(JSON.stringify(prev));
             console.log(response.data.accessToken);
             return {

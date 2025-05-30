@@ -216,3 +216,14 @@ export const askGroq = async (message, kioskID) => {
       throw error;
    }
 }
+
+export const fetchAdmins = async () => {
+   try {
+      const response = await axiosPrivate.get('/admin');
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during Groq API call', error);
+      throw error;
+   }
+}
