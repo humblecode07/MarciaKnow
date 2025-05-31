@@ -1,17 +1,19 @@
 import React, { useState } from 'react'
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate, useParams } from 'react-router-dom';
 import useLogout from '../hooks/useLogout';
 import LogoutModal from '../modals/LogoutModal';
+import useAuth from '../hooks/useAuth';
 
 const Sidebar = () => {
+   const { admin } = useAuth();
+   const { adminID } = useParams();
+
    const logout = useLogout();
-   const navigate = useNavigate();
 
    const [isOpen, setIsOpen] = useState(false);
    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
    const location = useLocation();
 
-   const [isKioskSelected, setIsKioskSelected] = useState(false);
    const [isKioskToggled, setIsKioskToggled] = useState(false);
 
    const toggleSidebar = () => {
@@ -36,10 +38,10 @@ const Sidebar = () => {
 
    const handleLogoutConfirm = () => {
       setIsLogoutModalOpen(false);
-      logout(); 
+      logout();
    }
 
-    const handleLogoutCancel = () => {
+   const handleLogoutCancel = () => {
       setIsLogoutModalOpen(false);
    }
 
@@ -165,27 +167,36 @@ const Sidebar = () => {
                         <span className={`font-roboto text-[.875rem] ${isActivePath('/reports') ? 'text-white' : 'text-black'}`}>Reports</span>
                      </div>
                   </NavLink>
-                  <NavLink to={'users'} className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer select-none  ${isActivePath('/users') ? 'bg-[#dbb341]' : 'bg-white hover:bg-gray-200'}`}>
+                  <NavLink
+                     to={'users'}
+                     className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer select-none ${(isActivePath('/users') || (isActivePath(`/${adminID}`) && adminID !== admin.adminId))
+                        ? 'bg-[#dbb341]'
+                        : 'bg-white hover:bg-gray-200'
+                        }`}
+                  >
                      <div className='w-[10.5625rem] flex items-center gap-[0.875rem] px-[.875rem]'>
                         <div className='w-[1.875rem] h-[1.875rem] rounded-full bg-[#110d79] flex justify-center items-center'>
                            <svg width="14" height="12" viewBox="0 0 14 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M9.8 9.85003V11.25H0V9.85003C0 9.85003 0 7.05003 4.9 7.05003C9.8 7.05003 9.8 9.85003 9.8 9.85003ZM7.35 3.20003C7.35 2.71546 7.20631 2.24178 6.9371 1.83888C6.66789 1.43598 6.28525 1.12196 5.83757 0.936521C5.38989 0.751086 4.89728 0.702568 4.42203 0.797102C3.94677 0.891636 3.51023 1.12498 3.16759 1.46761C2.82495 1.81025 2.59161 2.2468 2.49708 2.72205C2.40254 3.19731 2.45106 3.68992 2.6365 4.1376C2.82193 4.58528 3.13595 4.96792 3.53885 5.23713C3.94175 5.50634 4.41544 5.65003 4.9 5.65003C5.54978 5.65003 6.17295 5.3919 6.63241 4.93244C7.09188 4.47297 7.35 3.84981 7.35 3.20003ZM9.758 7.05003C10.1883 7.38305 10.5404 7.80633 10.7896 8.29008C11.0387 8.77383 11.1788 9.3063 11.2 9.85003V11.25H14V9.85003C14 9.85003 14 7.30903 9.758 7.05003ZM9.1 0.750026C8.61825 0.747785 8.14715 0.891798 7.749 1.16303C8.17421 1.75714 8.40284 2.46943 8.40284 3.20003C8.40284 3.93063 8.17421 4.64291 7.749 5.23703C8.14715 5.50825 8.61825 5.65227 9.1 5.65003C9.74978 5.65003 10.3729 5.3919 10.8324 4.93244C11.2919 4.47297 11.55 3.84981 11.55 3.20003C11.55 2.55025 11.2919 1.92708 10.8324 1.46761C10.3729 1.00815 9.74978 0.750026 9.1 0.750026Z" fill="#ffffff" />
                            </svg>
                         </div>
-                        <span className={`font-roboto text-[.875rem] ${isActivePath('/users') ? 'text-white' : 'text-black'}`}>Admin Users</span>
+                        <span className={`font-roboto text-[.875rem] ${(isActivePath('/users') || (isActivePath(`/${adminID}`) && adminID !== admin.adminId))
+                              ? 'text-white'
+                              : 'text-black'
+                           }`}>Admin Users</span>
                      </div>
                   </NavLink>
                </ul>
                <span className='pl-[2.375rem] text-[0.75rem] font-bold text-[#dbb341]'>ACCOUNT</span>
                <ul className='flex flex-col justify-center items-center'>
-                  <NavLink to={'profile'} className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer select-none ${isActivePath('/profile') ? 'bg-[#dbb341]' : 'bg-white hover:bg-gray-200'}`}>
+                  <NavLink to={`${admin.adminId}`} className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer select-none ${isActivePath(`${admin.adminId}`) ? 'bg-[#dbb341]' : 'bg-white hover:bg-gray-200'}`}>
                      <div className='w-[10.5625rem] flex items-center gap-[0.875rem] px-[.875rem] cursor-pointer'>
                         <div className='w-[1.875rem] h-[1.875rem] rounded-full bg-[#110d79] flex justify-center items-center'>
                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M7 0C7.92826 0 8.8185 0.368749 9.47487 1.02513C10.1313 1.6815 10.5 2.57174 10.5 3.5C10.5 4.42826 10.1313 5.3185 9.47487 5.97487C8.8185 6.63125 7.92826 7 7 7C6.07174 7 5.1815 6.63125 4.52513 5.97487C3.86875 5.3185 3.5 4.42826 3.5 3.5C3.5 2.57174 3.86875 1.6815 4.52513 1.02513C5.1815 0.368749 6.07174 0 7 0ZM7 8.75C10.8675 8.75 14 10.3162 14 12.25V14H0V12.25C0 10.3162 3.1325 8.75 7 8.75Z" fill="#ffffff" />
                            </svg>
                         </div>
-                        <span className={`font-roboto text-[.875rem] ${isActivePath('/profile') ? 'text-white' : 'text-black'}`}>Profile</span>
+                        <span className={`font-roboto text-[.875rem] ${isActivePath(`${admin.adminId}`) ? 'text-white' : 'text-black'}`}>Profile</span>
                      </div>
                   </NavLink>
                   <NavLink className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer bg-white select-none hover:bg-gray-200`}>
@@ -203,7 +214,7 @@ const Sidebar = () => {
                </ul>
             </div>
          </div>
-          <LogoutModal
+         <LogoutModal
             isOpen={isLogoutModalOpen}
             onClose={handleLogoutCancel}
             onConfirm={handleLogoutConfirm}

@@ -19,6 +19,7 @@ import KioskHome from "./pages/Kiosk/KioskHome"
 import { AuthProvider } from "./context/AuthContext"
 import PersistLogin from "./pages/PersistLogin"
 import RequireAuth from "./components/RequireAuth"
+import Settings from "./pages/Settings"
 
 const superAdminRole = Number(import.meta.env.VITE_ROLE_SUPER_ADMIN);
 const adminRole = Number(import.meta.env.VITE_ROLE_ADMIN);
@@ -101,8 +102,12 @@ const router = createBrowserRouter([
                   element: <Users />
                },
                {
-                  path: 'profile',
+                  path: ':adminID',
                   element: <Profile />
+               },
+               {
+                  path: ':adminID/settings',
+                  element: <Settings />
                },
             ]
          }

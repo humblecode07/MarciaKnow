@@ -223,7 +223,64 @@ export const fetchAdmins = async () => {
       return response.data;
    }
    catch (error) {
-      console.error('Error during Groq API call', error);
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const fetchAdmin = async (adminID) => {
+   try {
+      const response = await axiosPrivate.get(`/admin/${adminID}`);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const createAdmin = async (data) => {
+   try {
+      const response = await axiosPrivate.post('/admin/register', data);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const updateAdmin = async (data, adminID) => {
+   try {
+      const response = await axiosPrivate.put(`/admin/${adminID}`, data);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+
+export const updateAdminField = async (data, adminID) => {
+   try {
+      const response = await axiosPrivate.patch(`/admin/${adminID}/field`, data);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+
+export const updateAdminPassword = async (data, adminID) => {
+   try {
+      const response = await axiosPrivate.patch(`/admin/${adminID}/password`, data);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
       throw error;
    }
 }
