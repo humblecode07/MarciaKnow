@@ -43,7 +43,9 @@ const Sidebar = () => {
 
    const handleLogoutCancel = () => {
       setIsLogoutModalOpen(false);
-   }
+   }  
+
+   console.log(adminID);
 
    return (
       <>
@@ -187,7 +189,7 @@ const Sidebar = () => {
                      </div>
                   </NavLink>
                </ul>
-               <span className='pl-[2.375rem] text-[0.75rem] font-bold text-[#dbb341]'>ACCOUNT</span>
+               <span className='pl-[2.375rem] text-[0.75rem] font-bold text-black'>ACCOUNT</span>
                <ul className='flex flex-col justify-center items-center'>
                   <NavLink to={`${admin.adminId}`} className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer select-none ${isActivePath(`${admin.adminId}`) ? 'bg-[#dbb341]' : 'bg-white hover:bg-gray-200'}`}>
                      <div className='w-[10.5625rem] flex items-center gap-[0.875rem] px-[.875rem] cursor-pointer'>
@@ -199,7 +201,7 @@ const Sidebar = () => {
                         <span className={`font-roboto text-[.875rem] ${isActivePath(`${admin.adminId}`) ? 'text-white' : 'text-black'}`}>Profile</span>
                      </div>
                   </NavLink>
-                  <NavLink className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer bg-white select-none hover:bg-gray-200`}>
+                  <button className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer bg-white select-none hover:bg-gray-200`}>
                      <button onClick={handleLogoutClick} className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer bg-white select-none hover:bg-gray-200`}>
                         <div className='w-[10.5625rem] flex items-center gap-[0.875rem] px-[.875rem]'>
                            <div className='w-[1.875rem] h-[1.875rem] rounded-full bg-[#110d79] flex justify-center items-center'>
@@ -210,7 +212,7 @@ const Sidebar = () => {
                            <span className={`font-roboto text-[.875rem] text-black`}>Logout</span>
                         </div>
                      </button>
-                  </NavLink>
+                  </button>
                </ul>
             </div>
          </div>

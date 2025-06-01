@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import CampusMap from '../components/TestKiosk/CampusMap';
-import { fetchBuilding, fetchKiosk, fetchRoom } from '../api/api';
+import { fetchBuilding, fetchKiosk, fetchRoom, logQrCodeScan } from '../api/api';
 import SearchIcon from '../assets/Icons/SearchIcon';
 import LibraryIcon from '../assets/Icons/LibraryIcon';
 import BuildingIcon from '../assets/Icons/BuildingIcon';
@@ -16,6 +16,24 @@ const ScanGuide = () => {
    const [room, setRoom] = useState();
    const [building, setBuilding] = useState();
    const [showSidebar, setShowSidebar] = useState(false);
+   const [scanLogged, setScanLogged] = useState(false);
+
+   useEffect(() => {
+      const logScan = async () => {
+         if (buildingID && kioskID && !scanLogged) {
+            try {
+               await logQrCodeScan(buildingID, kioskID, building?.name);
+               setScanLogged(true);
+               console.log('QR scan logged successfully');
+            } 
+            catch (error) {
+               console.error('Failed to log QR scan:', error);
+            }
+         }
+      };
+
+      logScan();
+   }, [buildingID, kioskID, building?.name, scanLogged]);
 
    useEffect(() => {
       if (roomID) {
@@ -77,14 +95,14 @@ const ScanGuide = () => {
                      <span className='text-xs text-[#00AF26]'>Your way around campus</span>
                   </div>
                </div>
-               <button 
+               <button
                   onClick={() => setShowSidebar(!showSidebar)}
                   className='w-10 h-10 bg-[#4329D8] text-white rounded-lg flex items-center justify-center'
                >
                   <span className='text-lg'>☰</span>
                </button>
             </div>
-            
+
             {/* Mobile Status Bar */}
             <div className='mt-3 flex items-center justify-between bg-[#DBB341] px-4 py-2 rounded-lg text-white text-sm'>
                <div className='flex gap-2 items-center'>
@@ -126,7 +144,7 @@ const ScanGuide = () => {
             {/* Mobile Close Button */}
             <div className='lg:hidden flex justify-between items-center p-4 border-b'>
                <span className='font-righteous text-lg text-[#110D79]'>Navigation Guide</span>
-               <button 
+               <button
                   onClick={() => setShowSidebar(false)}
                   className='w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center'
                >
@@ -202,7 +220,7 @@ const ScanGuide = () => {
                      Reports & Feedback
                   </button>
                </div>
-               
+
                {/* Desktop Status Bar */}
                <div className='hidden lg:flex h-14 items-center justify-between bg-[#DBB341] px-5 text-white'>
                   <div className='flex gap-4'>
@@ -221,7 +239,7 @@ const ScanGuide = () => {
 
          {/* Overlay for mobile sidebar */}
          {showSidebar && (
-            <div 
+            <div
                className='fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden'
                onClick={() => setShowSidebar(false)}
             />
@@ -231,21 +249,23 @@ const ScanGuide = () => {
          <div className='flex-1 flex flex-col lg:ml-0'>
             {/* Mobile Map Toggle Button */}
             <div className='lg:hidden bg-white shadow-sm p-3 border-b'>
-               <button 
+               <button
                   onClick={() => setShowSidebar(true)}
                   className='w-full py-2 px-4 bg-[#4329D8] text-white rounded-lg font-medium hover:bg-[#3620b8] transition-colors'
                >
                   View Navigation Guide
                </button>
             </div>
-            
+
             {/* Map */}
             <div className='flex-1 relative min-h-[60vh] lg:min-h-0'>
                <div className='absolute inset-0 w-full h-full'>
-                  <CampusMap 
-                     mode={import.meta.env.VITE_QR_CODE_KIOSK} 
-                     currentPath={currentPath} 
-                     setCurrentPath={setCurrentPath} 
+                  <CampusMap
+                     mode={import.meta.env.VITE_QR_CODE_KIOSK}
+                     currentPath={currentPath}
+                     setCurrentPath={setCurrentPath}
+                     width={'80dvw'}
+                     height={'100dvh'}
                   />
                </div>
             </div>

@@ -7,7 +7,7 @@ import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchBuildings, fetchBuildingsFromSpecificKiosk, fetchRooms, fetchRoomsFromKiosk } from "../../api/api"
 
-const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, setCurrentPath }) => {
+const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, setCurrentPath, width, height }) => {
    const { data: buildings, error: buildingsError, isLoading: buildingsLoading } = useQuery({
       queryKey: ['buildings'],
       queryFn: () => fetchBuildingsFromSpecificKiosk(kiosk.kioskID)
@@ -101,7 +101,10 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
    }
 
    return (
-      <section className='w-[18.75rem] h-[49.4375rem] py-[1.125rem] flex flex-col bg-[#FBFCF8] shadow-md relative mt-[3.25rem]'>
+      <section 
+         className={`py-[1.125rem] flex flex-col bg-[#FBFCF8] shadow-md relative`}
+         style={{ width, height }}
+      >
          <div className="flex gap-[.5rem] px-[1rem]">
             <img
                src={yangaLogo}

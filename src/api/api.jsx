@@ -284,3 +284,28 @@ export const updateAdminPassword = async (data, adminID) => {
       throw error;
    }
 }
+
+export const updateAdminStatus = async (data, adminID) => {
+   try {
+      const response = await axiosPrivate.patch(`/${adminID}/status`, data);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const logQrCodeScan = async (buildingId, kioskId, buildingName = null) => {
+   try {
+      const response = await axiosPrivate.post(`/qrscan/${buildingId}/${kioskId}`, {
+         buildingName: buildingName
+      });
+
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error logging QR scan:', error);
+      throw error;
+   }
+};

@@ -12,7 +12,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import usePathNavigation from '../../hooks/usePathNavigation';
 import QRCode from "react-qr-code";
 
-const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, setCurrentPath, kiosk, setRoom, setBuilding }) => {
+const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, setCurrentPath, kiosk, setRoom, setBuilding, height, width }) => {
    const { data: kiosksData, error: kiosksError, isLoading: kiosksLoading } = useQuery({
       queryKey: ['kiosks'],
       queryFn: fetchKiosks,
@@ -136,7 +136,10 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
    const shouldShowBuildingPanels = selectedBuilding && (mode !== import.meta.env.VITE_ADD_KIOSK);
 
    return (
-      <section className='w-full h-full relative flex flex-col gap-[1rem]'>
+      <section 
+         className='relative flex flex-col gap-[1rem]'
+
+      >
          {mode === import.meta.env.VITE_TEST_KIOSK ?
             <div className="w-[49.4375rem] h-[2.25rem] flex items-center justify-center bg-[#D1D6FA] border-solid border-[1px] border-[#110D79]">
 
@@ -162,7 +165,7 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
             </div> : null}
          <svg
             ref={svgRef}
-            width="100%"
+            width={width}
             height="100%"
             style={{ border: '1px solid #ccc' }}
             preserveAspectRatio='xMidYMid meet'

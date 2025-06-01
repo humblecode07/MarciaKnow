@@ -13,8 +13,11 @@ import AdminViewIcon from '../assets/Icons/AdminViewIcon';
 import LogoutIcon from '../assets/Icons/LogoutIcon';
 import CreateAdminModal from '../modals/CreateAdminModal';
 import { NavLink } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
 
 const Users = () => {
+  const { admin } = useAuth();
+
   const queryClient = useQueryClient();
   const { data: adminsData, error: adminsError, isLoading: adminsLoading } = useQuery({
     queryKey: ['admins'],
@@ -75,6 +78,7 @@ const Users = () => {
     return <div>Error loading admins data.</div>;
   }
 
+  console.log(admin);
   console.log(adminsData);
 
   return (
@@ -127,13 +131,13 @@ const Users = () => {
             <p className='text-sm mt-2'>Try searching for a different term or clear the search to see all admins.</p>
           </div>
         ) : (
-          filteredAdmins.map((admin) => {
+          filteredAdmins.map((adminData) => {
             return (
-              <div key={admin._id} className='flex flex-col gap-[1.75rem] px-[1.5rem] py-[1.375rem] bg-[#FBFCF8] shadow-md'>
+              <div key={adminData._id} className='flex flex-col gap-[1.75rem] px-[1.5rem] py-[1.375rem] bg-[#FBFCF8] shadow-md'>
                 <div className='flex justify-between items-center'>
                   <div className='flex gap-[.75rem]'>
                     <img
-                      src={admin.profile ? `http://localhost:3000/admin/profile/${admin.profile}` : '/default-avatar.png'}
+                      src={adminData.profile ? `http://localhost:3000/admin/profile/${adminData.profile}` : '/default-avatar.png'}
                       alt=""
                       className='w-[3rem] h-[3rem] rounded-full object-cover'
                       onError={(e) => {
@@ -141,13 +145,13 @@ const Users = () => {
                       }}
                     />
                     <div className='flex flex-col gap-[0.1875rem]'>
-                      <span className='font-roboto font-semibold'>{admin.full_name}</span>
+                      <span className='font-roboto font-semibold'>{adminData.full_name}</span>
                       <div className='flex gap-[0.8125rem] items-center'>
-                        <div className={`px-[0.46875rem] py-[.25rem] ${admin.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'bg-[#F3E8FF]' : 'bg-[#D1D6FA]'} rounded-full flex`}>
-                          <span className={`${admin.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'text-[#5B21B6]' : 'text-[#110D79]'} font-roboto font-medium text-[.75rem] items-center justify-center`}>{admin.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'Super Admin' : 'Admin'}</span>
+                        <div className={`px-[0.46875rem] py-[.25rem] ${adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'bg-[#F3E8FF]' : 'bg-[#D1D6FA]'} rounded-full flex`}>
+                          <span className={`${adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'text-[#5B21B6]' : 'text-[#110D79]'} font-roboto font-medium text-[.75rem] items-center justify-center`}>{adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'Super Admin' : 'Admin'}</span>
                         </div>
-                        <span className={`font-roboto text-[.75rem] ${admin.status === 'online' ? 'text-green-500' : 'text-red-500'}`}>
-                          {admin.status === 'online' ? 'ACTIVE' : 'INACTIVE'}
+                        <span className={`font-roboto text-[.75rem] ${adminData.status === 'online' ? 'text-green-500' : 'text-red-500'}`}>
+                          {adminData.status === 'online' ? 'ONLINE' : 'OFFLINE'}
                         </span>
                       </div>
                     </div>
@@ -159,29 +163,29 @@ const Users = () => {
                 <div className='flex flex-col gap-[1rem]'>
                   <div className='flex gap-[0.5625rem] items-center'>
                     <EmailIcon />
-                    <span className='font-roboto text-[.75rem] text-[#4B5563]'>{admin.email || 'N/A'}</span>
+                    <span className='font-roboto text-[.75rem] text-[#4B5563]'>{adminData.email || 'N/A'}</span>
                   </div>
                   <div className='flex gap-[0.5625rem] items-center'>
                     <CallIcon />
-                    <span className='font-roboto text-[.75rem] text-[#4B5563]'>{admin?.contact || 'N/A'}</span>
+                    <span className='font-roboto text-[.75rem] text-[#4B5563]'>{adminData?.contact || 'N/A'}</span>
                   </div>
                   <Divider />
                   <div className='flex gap-[0.5625rem] items-center'>
                     <ClockIcon />
-                    <span className='font-roboto text-[.75rem] text-[#4B5563]'><span className='font-bold'>Last Login: </span>{admin?.lastLogin || 'N/A'}</span>
+                    <span className='font-roboto text-[.75rem] text-[#4B5563]'><span className='font-bold'>Last Login: </span>{adminData?.lastLogin || 'N/A'}</span>
                   </div>
                   <div className='flex gap-[0.5625rem] items-center'>
                     <CalendarIcon />
-                    <span className='font-roboto text-[.75rem] text-[#4B5563]'><span className='font-bold'>Joined: </span>{admin.joined ? new Date(admin.joined).toLocaleDateString() : 'N/A'}</span>
+                    <span className='font-roboto text-[.75rem] text-[#4B5563]'><span className='font-bold'>Joined: </span>{adminData.joined ? new Date(adminData.joined).toLocaleDateString() : 'N/A'}</span>
                   </div>
                 </div>
-                {admin.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ?
-                  <NavLink to={`/admin/${admin._id}`} className='flex items-center justify-center gap-[.5rem] border-solid border-[1px] border-black py-[.25rem] bg-[#FBF9F6]'>
+                {adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ?
+                  <NavLink to={`/admin/${adminData._id}`} className='flex items-center justify-center gap-[.5rem] border-solid border-[1px] border-black py-[.25rem] bg-[#FBF9F6]'>
                     <AdminViewIcon />
                     <span className='font-roboto text-[.875rem]'>View</span>
                   </NavLink> :
                   <div className='flex gap-[1.1875rem]'>
-                    <NavLink to={`/admin/${admin._id}`} className='w-full flex items-center justify-center gap-[.5rem] border-solid border-[1px] border-black py-[.25rem] bg-[#FBF9F6]'>
+                    <NavLink to={`/admin/${adminData._id}`} className='w-full flex items-center justify-center gap-[.5rem] border-solid border-[1px] border-black py-[.25rem] bg-[#FBF9F6]'>
                       <AdminViewIcon />
                       <span className='font-roboto text-[.875rem]'>View</span>
                     </NavLink>

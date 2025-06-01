@@ -44,12 +44,37 @@ const ClientKiosk = () => {
   console.log(currentPath);
 
   return (
-    <div className="w-[90rem] h-[50rem] flex ml-[10.5625rem] mt-[1.875rem]">
-      <LeftSidePanel room={room} building={building} onRoomSelect={setRoom} onBuildingSelect={setBuilding} kiosk={kiosk} setCurrentPath={setCurrentPath} />
-      <CampusMap mode={import.meta.env.VITE_CLIENT_KIOSK} currentPath={currentPath} setCurrentPath={setCurrentPath} kiosk={kiosk} setRoom={setRoom} setBuilding={setBuilding} />
-      <RightSidePanel kiosk={kiosk} />
+    <div className="w-screen h-screen flex justify-center items-center bg-gray-100">
+      <div className="w-[100rem] flex">
+        <LeftSidePanel
+          room={room}
+          building={building}
+          onRoomSelect={setRoom}
+          onBuildingSelect={setBuilding}
+          kiosk={kiosk}
+          setCurrentPath={setCurrentPath}
+          width={'20%'}
+          height={'100dvh'}
+        />
+        <CampusMap
+          mode={import.meta.env.VITE_CLIENT_KIOSK}
+          currentPath={currentPath}
+          setCurrentPath={setCurrentPath}
+          kiosk={kiosk}
+          setRoom={setRoom}
+          setBuilding={setBuilding}
+          width={'50dvw'}
+          height={'100dvh'}
+        />
+        <RightSidePanel
+          kiosk={kiosk}
+          width={'20%'}
+          height={'100dvh'}
+        />
+      </div>
     </div>
   )
+
 }
 
 export default ClientKiosk

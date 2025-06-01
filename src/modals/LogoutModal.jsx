@@ -3,7 +3,7 @@ const LogoutModal = ({ isOpen, onClose, onConfirm }) => {
 
    return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-         <div className="bg-white rounded-lg p-6 w-80 mx-4">
+         <div className="bg-white p-6 w-80 mx-4">
             <div className="flex items-center justify-center mb-4">
                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -25,13 +25,13 @@ const LogoutModal = ({ isOpen, onClose, onConfirm }) => {
             <div className="flex gap-3">
                <button
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                >
                   Cancel
                </button>
                <button
                   onClick={onConfirm}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors font-medium"
                >
                   Logout
                </button>

@@ -20,6 +20,7 @@ import { AuthProvider } from "./context/AuthContext"
 import PersistLogin from "./pages/PersistLogin"
 import RequireAuth from "./components/RequireAuth"
 import Settings from "./pages/Settings"
+import useOnlineStatus from "./hooks/useOnlineStatus"
 
 const superAdminRole = Number(import.meta.env.VITE_ROLE_SUPER_ADMIN);
 const adminRole = Number(import.meta.env.VITE_ROLE_ADMIN);
@@ -116,6 +117,8 @@ const router = createBrowserRouter([
 ])
 
 function App() {
+   useOnlineStatus();
+
    return (
       <AuthProvider >
          <RouterProvider router={router} />
