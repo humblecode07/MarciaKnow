@@ -8,6 +8,7 @@ import AdrenalineIcon from '../assets/Icons/Reports/AdrenalineIcon';
 import { useReportsData } from '../hooks/useReportsData'; // Adjust path as needed
 import CommonPlacesChart from '../components/CommonPlacesChart';
 import SearchActivityChart from '../components/SearchActivityChart';
+import InteractionsLog from '../components/InteractionsLog';
 
 const Reports = () => {
   const [timeframe, setTimeframe] = useState('month');
@@ -336,6 +337,7 @@ const Reports = () => {
           </div>
         </div>
       </div>
+      <InteractionsLog timeframe={timeframe} />
       <CommonPlacesChart
         data={data.frequentDestinations}
         timeframe={timeframe}
