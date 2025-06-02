@@ -309,3 +309,107 @@ export const logQrCodeScan = async (buildingId, kioskId, buildingName = null) =>
       throw error;
    }
 };
+
+// Fixed logDestinationSearch function
+export const logDestinationSearch = async (buildingId, roomId, searchQuery, destinationType, kioskId) => {
+   try {
+      const response = await axiosPrivate.post('/destinationlog', {
+         buildingId,
+         roomId,
+         searchQuery,
+         destinationType, // 'building' or 'room'
+         kioskId,
+         timestamp: new Date().toISOString(),
+      });
+
+      return response.data;
+   } catch (error) {
+      console.error('Error logging destination search:', error);
+      throw error;
+   }
+};
+
+// Fixed getMostFrequentDestinations function
+export const getMostFrequentDestinations = async (timeframe = 'month') => {
+   try {
+      const response = await axiosPrivate.get(`/destinationlog/frequent-destinations?timeframe=${timeframe}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching frequent destinations:', error);
+      throw error;
+   }
+};
+
+export const fetchTotalScans = async (filters = {}) => {
+   try {
+      const params = new URLSearchParams();
+      if (filters.kioskId) params.append('kioskId', filters.kioskId);
+      if (filters.buildingId) params.append('buildingId', filters.buildingId);
+
+      const response = await axiosPrivate.get(`/qrscan/reports/total?${params}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching total scans:', error);
+      throw error;
+   }
+};
+
+export const fetchBuildingKioskStats = async () => {
+   try {
+      const response = await axiosPrivate.get('/qrscan/stats/buildings');
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching building/kiosk stats:', error);
+      throw error;
+   }
+};
+
+export const fetchDailyScanReport = async (filters = {}) => {
+   try {
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+      if (filters.kioskId) params.append('kioskId', filters.kioskId);
+      if (filters.buildingId) params.append('buildingId', filters.buildingId);
+
+      const response = await axiosPrivate.get(`/qrscan/reports/daily?${params}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching daily scan report:', error);
+      throw error;
+   }
+};
+
+export const fetchFrequentDestinations = async (timeframe = 'month') => {
+   try {
+      const response = await axiosPrivate.get(`/destinationlog/frequent-destinations?timeframe=${timeframe}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching frequent destinations:', error);
+      throw error;
+   }
+};
+
+export const fetchDashboardStats = async () => {
+   try {
+      const [
+         totalScansData,
+         buildingStatsData,
+         frequentDestinationsData
+      ] = await Promise.all([
+         fetchTotalScans(),
+         fetchBuildingKioskStats(),
+         fetchFrequentDestinations()
+      ]);
+
+      return {
+         totalScans: totalScansData.data.totalScans,
+         buildingStats: buildingStatsData.data,
+         frequentDestinations: frequentDestinationsData.destinations,
+         totalDestinationSearches: frequentDestinationsData.totalLogs
+      };
+   } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+   }
+};

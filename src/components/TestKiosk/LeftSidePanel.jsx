@@ -6,6 +6,7 @@ import yangaLogo from '../../../public/Photos/yangaLogo.png'
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchBuildings, fetchBuildingsFromSpecificKiosk, fetchRooms, fetchRoomsFromKiosk } from "../../api/api"
+import { logDestinationSearch } from "../../api/api" // Import your logging function
 
 const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, setCurrentPath, width, height }) => {
    const { data: buildings, error: buildingsError, isLoading: buildingsLoading } = useQuery({
@@ -49,14 +50,49 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
       setShowResults(value.trim().length > 0);
    };
 
-   const handleResultClick = (item, type) => {
+   // Enhanced function to log destination searches
+   const logDestinationActivity = async (item, type, searchQuery, isQuickSuggestion = false) => {
+      try {
+         if (!kiosk?.kioskID) {
+            console.warn('Kiosk ID not available for logging');
+            return;
+         }
+
+         const logData = {
+            buildingId: type === 'building' ? item.id : (item.buildingID || null),
+            roomId: type === 'room' ? item._id : null,
+            searchQuery: searchQuery || search,
+            destinationType: type,
+            kioskId: kiosk.kioskID
+         };
+
+         console.log(item);
+         console.log(logData);
+
+         await logDestinationSearch(
+            logData.buildingId,
+            logData.roomId,
+            logData.searchQuery,
+            logData.destinationType,
+            logData.kioskId
+         );
+
+         console.log('Destination search logged successfully:', logData);
+      } catch (error) {
+         console.error('Failed to log destination search:', error);
+         // Don't block the user experience if logging fails
+      }
+   };
+
+   const handleResultClick = async (item, type) => {
+      // Log the destination search/selection
+      await logDestinationActivity(item, type, search);
+
       if (type === 'building') {
          onBuildingSelect(item);
 
          const newPath = item.navigationPath;
-
          console.log(newPath);
-
          // setCurrentPath(newPath);
       }
       else if (type === 'room') {
@@ -65,25 +101,51 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
          const newPath = item.navigationPath;
          setCurrentPath(newPath);
       }
+
       setSearch('');
       setShowResults(false);
    };
 
-   const handleQuickSuggestionClick = (suggestionType) => {
+   const handleQuickSuggestionClick = async (suggestionType) => {
+      let searchQuery = '';
+      let destinationType = '';
+      let mockItem = null;
+
       switch (suggestionType) {
          case 'library':
-            setSearch('library');
-            setShowResults(true);
+            searchQuery = 'library';
+            destinationType = 'room';
+            // Try to find actual library item for better logging
+            mockItem = rooms?.find(room =>
+               room.name?.toLowerCase().includes('library')
+            ) || { name: 'Library', _id: null, buildingId: null };
             break;
          case 'sofia':
-            setSearch('sofia building 2');
-            setShowResults(true);
+            searchQuery = 'sofia building 2';
+            destinationType = 'building';
+            // Try to find actual Sofia Building 2 for better logging
+            mockItem = buildings?.find(building =>
+               building.name?.toLowerCase().includes('sofia') &&
+               building.name?.toLowerCase().includes('2')
+            ) || { name: 'Sofia Building 2', id: null };
             break;
          case 'cashier':
-            setSearch('cashier');
-            setShowResults(true);
+            searchQuery = 'cashier';
+            destinationType = 'room';
+            // Try to find actual cashier room for better logging
+            mockItem = rooms?.find(room =>
+               room.name?.toLowerCase().includes('cashier')
+            ) || { name: 'Cashier', _id: null, buildingId: null };
             break;
       }
+
+      // Log the quick suggestion click
+      if (mockItem) {
+         await logDestinationActivity(mockItem, destinationType, searchQuery, true);
+      }
+
+      setSearch(searchQuery);
+      setShowResults(true);
    };
 
    if (buildingsLoading || roomsLoading) {
@@ -101,7 +163,7 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
    }
 
    return (
-      <section 
+      <section
          className={`py-[1.125rem] flex flex-col bg-[#FBFCF8] shadow-md relative`}
          style={{ width, height }}
       >

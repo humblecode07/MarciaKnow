@@ -138,7 +138,7 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
    return (
       <section 
          className='relative flex flex-col gap-[1rem]'
-
+         style={{ height, width }}
       >
          {mode === import.meta.env.VITE_TEST_KIOSK ?
             <div className="w-[49.4375rem] h-[2.25rem] flex items-center justify-center bg-[#D1D6FA] border-solid border-[1px] border-[#110D79]">

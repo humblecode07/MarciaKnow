@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import CampusMap from '../components/TestKiosk/CampusMap';
-import { fetchBuilding, fetchKiosk, fetchRoom, logQrCodeScan } from '../api/api';
+import { fetchBuilding, fetchKiosk, fetchRoom, logDestinationSearch, logQrCodeScan } from '../api/api';
 import SearchIcon from '../assets/Icons/SearchIcon';
 import LibraryIcon from '../assets/Icons/LibraryIcon';
 import BuildingIcon from '../assets/Icons/BuildingIcon';
@@ -20,20 +20,23 @@ const ScanGuide = () => {
 
    useEffect(() => {
       const logScan = async () => {
-         if (buildingID && kioskID && !scanLogged) {
+         if (buildingID && kioskID && !scanLogged && building?.name) { // Added building?.name check
             try {
-               await logQrCodeScan(buildingID, kioskID, building?.name);
+               await logQrCodeScan(buildingID, kioskID, building.name);
                setScanLogged(true);
                console.log('QR scan logged successfully');
-            } 
+            }
             catch (error) {
                console.error('Failed to log QR scan:', error);
             }
          }
       };
 
-      logScan();
-   }, [buildingID, kioskID, building?.name, scanLogged]);
+      // Only run logScan if building data is available
+      if (building?.name) {
+         logScan();
+      }
+   }, [buildingID, kioskID, building, scanLogged]);
 
    useEffect(() => {
       if (roomID) {
@@ -77,7 +80,7 @@ const ScanGuide = () => {
 
    }, [buildingID, roomID, kioskID])
 
-   console.log(kiosk);
+   console.log(building);
 
    return (
       <div className='flex flex-col lg:flex-row min-h-screen bg-gray-50'>
@@ -264,7 +267,7 @@ const ScanGuide = () => {
                      mode={import.meta.env.VITE_QR_CODE_KIOSK}
                      currentPath={currentPath}
                      setCurrentPath={setCurrentPath}
-                     width={'80dvw'}
+                     width={'100dvw'}
                      height={'100dvh'}
                   />
                </div>
