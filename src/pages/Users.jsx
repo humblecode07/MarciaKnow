@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react'
 import AdminUserIcon from '../assets/Icons/AdminUserIcon'
 import SearchIcon from '../assets/Icons/SearchIcon'
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createAdmin, fetchAdmins } from '../api/api';
+import { createAdmin, fetchAdmins, disableAdmin, enableAdmin } from '../api/api';
 import DangoIcon from '../assets/Icons/DangoIcon';
 import EmailIcon from '../assets/Icons/EmailIcon';
 import Divider from '../components/Divider';
@@ -12,6 +12,7 @@ import CalendarIcon from '../assets/Icons/CalendarIcon';
 import AdminViewIcon from '../assets/Icons/AdminViewIcon';
 import LogoutIcon from '../assets/Icons/LogoutIcon';
 import CreateAdminModal from '../modals/CreateAdminModal';
+import DisableAdminModal from '../modals/DisableAdminModal';
 import { NavLink } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 
@@ -25,6 +26,9 @@ const Users = () => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [isDisabling, setIsDisabling] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter admins based on search query
@@ -60,6 +64,42 @@ const Users = () => {
       queryClient.invalidateQueries(['admins']);
     } catch (error) {
       console.error('Failed to add new admin:', error.message);
+    }
+  };
+
+  const handleDisableClick = (adminData) => {
+    setSelectedAdmin(adminData);
+    setIsDisableModalOpen(true);
+  };
+
+  const handleDisableConfirm = async () => {
+    if (!selectedAdmin) return;
+
+    setIsDisabling(true);
+    try {
+      if (selectedAdmin.isDisabled) {
+        await enableAdmin(selectedAdmin._id);
+      } else {
+        await disableAdmin(selectedAdmin._id);
+      }
+
+      queryClient.invalidateQueries(['admins']);
+      setIsDisableModalOpen(false);
+      setSelectedAdmin(null);
+
+      const action = selectedAdmin.isDisabled ? 'enabled' : 'disabled';
+      console.log(`Admin ${selectedAdmin.full_name} has been ${action} successfully`);
+    } catch (error) {
+      console.error('Failed to update admin status:', error.message);
+      // Show error toast/notification to user
+    } finally {
+      setIsDisabling(false);
+    }
+  };
+  const handleDisableModalClose = () => {
+    if (!isDisabling) {
+      setIsDisableModalOpen(false);
+      setSelectedAdmin(null);
     }
   };
 
@@ -189,9 +229,18 @@ const Users = () => {
                       <AdminViewIcon />
                       <span className='font-roboto text-[.875rem]'>View</span>
                     </NavLink>
-                    <button className='w-full flex items-center justify-center gap-[.5rem] border-solid border-[1px] border-[#AF1E1E] py-[.25rem] bg-[#FAD1D1]'>
-                      <LogoutIcon color={`AF1E1E`} />
-                      <span className='font-roboto text-[.875rem] text-[#AF1E1E]'>Disable</span>
+                    <button
+                      className={`w-full flex items-center justify-center gap-[.5rem] border-solid border-[1px] py-[.25rem] cursor-pointer ${adminData?.isDisabled === true
+                          ? 'border-[#16A34A] bg-[#D1FAE5]'  
+                          : 'border-[#AF1E1E] bg-[#FAD1D1]'  
+                        }`}
+                      onClick={() => handleDisableClick(adminData)}
+                    >
+                      <LogoutIcon color={adminData?.isDisabled === true ? '16A34A' : 'AF1E1E'} />
+                      <span className={`font-roboto text-[.875rem] ${adminData?.isDisabled === true ? 'text-[#16A34A]' : 'text-[#AF1E1E]'
+                        }`}>
+                        {adminData?.isDisabled === true ? 'Enable' : 'Disable'}
+                      </span>
                     </button>
                   </div>
                 }
@@ -200,10 +249,19 @@ const Users = () => {
           })
         )}
       </div>
+
       <CreateAdminModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddAdmin}
+      />
+
+      <DisableAdminModal
+        isOpen={isDisableModalOpen}
+        onClose={handleDisableModalClose}
+        onConfirm={handleDisableConfirm}
+        adminData={selectedAdmin}
+        isLoading={isDisabling}
       />
     </div>
   )

@@ -296,6 +296,28 @@ export const updateAdminStatus = async (data, adminID) => {
    }
 }
 
+export const disableAdmin = async (adminID) => {
+   try {
+      const response = await axiosPrivate.patch(`/admin/${adminID}/disable`);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const enableAdmin = async (adminID) => {
+   try {
+      const response = await axiosPrivate.patch(`/admin/${adminID}/enable`);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
 export const logQrCodeScan = async (buildingId, kioskId, buildingName = null) => {
    try {
       const response = await axiosPrivate.post(`/qrscan/${buildingId}/${kioskId}`, {
