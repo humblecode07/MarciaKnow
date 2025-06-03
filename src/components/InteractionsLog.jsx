@@ -69,19 +69,14 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
          const searchLogs = [];
 
          response.data.destinations.forEach(dest => {
-            // Create mock entries based on the destination data
-            // In reality, you'd want individual search log entries with timestamps
             for (let i = 0; i < Math.min(dest.count, 5); i++) {
-               const mockTimestamp = new Date(dest.lastAccessed);
-               mockTimestamp.setMinutes(mockTimestamp.getMinutes() - (i * 30)); // Spread over time
-
                searchLogs.push({
                   id: `${dest.buildingId}-${dest.roomId || 'building'}-${i}`,
                   type: 'search',
-                  timestamp: mockTimestamp.toISOString(),
+                  timestamp: new Date(dest.lastAccessed).toISOString(),
                   buildingName: dest.buildingName,
                   buildingId: dest.buildingId,
-                  kioskId: `Kiosk-${Math.floor(Math.random() * 3) + 1}`, // Mock kiosk ID
+                  kioskId: dest.kioskId, // Mock kiosk ID
                   destinationType: dest.destinationType,
                   roomName: dest.roomName,
                   details: dest.destinationType === 'room'
@@ -98,7 +93,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
       }
    };
 
-   // Combine and sort interactions
    const fetchInteractions = useCallback(async () => {
       try {
          setLoading(true);
@@ -109,13 +103,10 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
             fetchDestinationSearches()
          ]);
 
-         // Combine both types of interactions
          const allInteractions = [...qrScans, ...searches];
 
-         // Sort by timestamp (most recent first)
          allInteractions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-         // Apply timeframe filtering
          const now = new Date();
          let cutoffDate;
 
@@ -151,7 +142,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
       fetchInteractions();
    }, [fetchInteractions]);
 
-   // Format timestamp
    const formatTimestamp = (timestamp) => {
       const date = new Date(timestamp);
       return date.toLocaleString('en-US', {
@@ -165,7 +155,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
       });
    };
 
-   // Get paginated data
    const getPaginatedData = () => {
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = startIndex + itemsPerPage;
@@ -204,7 +193,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
 
    return (
       <div className="bg-white border border-gray-200 shadow-sm">
-         {/* Header */}
          <div className="flex justify-between items-center p-6 border-b border-gray-200">
             <div>
                <h3 className="font-roboto font-medium text-gray-900">
@@ -226,8 +214,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
                </select>
             </div>
          </div>
-
-         {/* Interactions List */}
          <div className="divide-y divide-gray-100">
             {paginatedData.length === 0 ? (
                <div className="flex justify-center items-center h-32">
@@ -238,7 +224,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
                   <div key={interaction.id} className="p-6 hover:bg-gray-50 transition-colors">
                      <div className="flex justify-between items-start">
                         <div className="flex-1">
-                           {/* Interaction Type Badge */}
                            <div className="flex items-center gap-2 mb-2">
                               <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${interaction.type === 'qr_scan'
                                     ? 'bg-purple-100 text-purple-700'
@@ -248,15 +233,11 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
                                  {interaction.type === 'qr_scan' ? 'QR Scan' : 'Search'}
                               </span>
                            </div>
-
-                           {/* Location/Building Name */}
                            <h4 className="font-roboto font-medium text-gray-900 mb-3">
                               {interaction.type === 'search' && interaction.roomName
                                  ? interaction.roomName
                                  : interaction.buildingName || 'Unknown Location'}
                            </h4>
-
-                           {/* Details */}
                            <div className="flex items-center gap-4 text-sm text-gray-600">
                               <div className="flex items-center gap-1">
                                  <ClockIcon />
@@ -268,8 +249,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
                               </div>
                            </div>
                         </div>
-
-                        {/* Interaction Number */}
                         <div className="flex-shrink-0 ml-4">
                            <span className="text-sm font-medium text-gray-500">
                               #{((currentPage - 1) * itemsPerPage) + index + 1}
@@ -280,8 +259,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
                ))
             )}
          </div>
-
-         {/* Pagination */}
          {totalPages > 1 && (
             <div className="flex justify-between items-center p-6 border-t border-gray-200">
                <div className="text-sm text-gray-600 font-roboto">
@@ -295,8 +272,6 @@ const InteractionsLog = ({ timeframe = 'week' }) => {
                   >
                      Previous
                   </button>
-
-                  {/* Page numbers */}
                   <div className="flex gap-1">
                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNum;

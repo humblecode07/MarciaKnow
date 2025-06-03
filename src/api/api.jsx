@@ -354,6 +354,16 @@ export const fetchTotalScans = async (filters = {}) => {
    }
 };
 
+export const fetchRecentScanLogs = async () => {
+   try {
+      const response = await axiosPrivate.get(`/qrscan/logs/recent`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching total scans:', error);
+      throw error;
+   }
+};
+
 export const fetchBuildingKioskStats = async () => {
    try {
       const response = await axiosPrivate.get('/qrscan/stats/buildings');
@@ -376,6 +386,16 @@ export const fetchDailyScanReport = async (filters = {}) => {
       return response.data;
    } catch (error) {
       console.error('Error fetching daily scan report:', error);
+      throw error;
+   }
+};
+
+export const fetchRecentDestinationSearch = async () => {
+   try {
+      const response = await axiosPrivate.get(`/destinationlog/recent-destinations`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching frequent destinations:', error);
       throw error;
    }
 };

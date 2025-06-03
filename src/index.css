@@ -2,26 +2,38 @@
 @import "tailwindcss";
 
 @theme {
-   --font-roboto: "Roboto", sans-serif;
-   --font-righteous: "Righteous", serif;
-   --font-poppins: "Poppins", sans-serif;
-   --font-roboto-flex: "Roboto Flex", sans-serif;
+  --font-roboto: "Roboto", sans-serif;
+  --font-righteous: "Righteous", serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-roboto-flex: "Roboto Flex", sans-serif;
 }
 
 @layer utilities {
-   .translate-y-full {
-     transform: translateY(100%);
-   }
-   .translate-y-0 {
-     transform: translateY(0);
-   }
- }
+  .translate-y-full {
+    transform: translateY(100%);
+  }
+
+  .translate-y-0 {
+    transform: translateY(0);
+  }
+}
 
 html {
-   overflow: hidden;
+  overflow: hidden;
 }
 
 .dropdown-option:hover {
   background-color: #110D79;
   color: white;
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-hidden {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }

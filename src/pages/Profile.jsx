@@ -2,6 +2,7 @@ import React from 'react'
 import { fetchAdmin } from '../api/api';
 import { NavLink, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+
 import useAuth from '../hooks/useAuth';
 import CoggersIcon from '../assets/Icons/CoggersIcon';
 import ClockIcon from '../assets/Icons/ClockIcon';
@@ -13,18 +14,31 @@ import CallIcon from '../assets/Icons/CallIcon';
 const Profile = () => {
   const { admin } = useAuth();
   const { adminID } = useParams();
-
   const { data: adminData, error, isLoading } = useQuery({
     queryKey: ['admin', adminID],
     queryFn: () => fetchAdmin(adminID),
   });
-
   const [activeTab, setActiveTab] = useState('tabs');
 
   const tabItems = [
     { id: 'tabs', label: 'KIOSK' },
     { id: 'editor', label: 'MAP EDITOR' }
   ];
+
+  // Helper function to get action color
+  const getActionColor = (action) => {
+    switch (action?.toLowerCase()) {
+      case 'added':
+        return { bg: 'bg-green-100', text: 'text-green-800' };
+      case 'updated':
+        return { bg: 'bg-blue-100', text: 'text-blue-800' };
+      case 'removed':
+        return { bg: 'bg-red-100', text: 'text-red-800' };
+      default:
+        return { bg: 'bg-gray-100', text: 'text-gray-800' };
+    }
+  };
+
 
   console.log(adminData);
 
@@ -43,7 +57,9 @@ const Profile = () => {
         <div className='flex gap-[1rem]'>
           <span className='font-roboto font-light text-[1.25rem] text-[#4B5563]'>{adminData.username}</span>
           <div className={`px-[0.46875rem] py-[.25rem] ${adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'bg-[#F3E8FF]' : 'bg-[#D1D6FA]'} rounded-full flex items-center justify-center`}>
-            <span className={`${adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'text-[#5B21B6]' : 'text-[#110D79]'} font-roboto font-medium text-[.75rem] items-center justify-center`}>{adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'Super Admin' : 'Admin'}</span>
+            <span className={`${adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'text-[#5B21B6]' : 'text-[#110D79]'} font-roboto font-medium text-[.75rem] items-center justify-center`}>
+              {adminData.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN)) ? 'Super Admin' : 'Admin'}
+            </span>
           </div>
         </div>
         <span className='font-roboto'>{adminData?.description || 'No description has been added yet.'}</span>
@@ -62,7 +78,7 @@ const Profile = () => {
             <span className='font-bold'>Last Login: </span>
             {adminData?.lastLogin
               ? new Date(adminData.lastLogin).toLocaleString('en-US', {
-                month: 'short', // e.g., May
+                month: 'short',
                 day: 'numeric',
                 year: 'numeric',
                 hour: 'numeric',
@@ -88,8 +104,7 @@ const Profile = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 text-center py-3 font-medium transition-all duration-200 ${activeTab === tab.id ? 'text-black' : 'text-gray-500'
-                  }`}
+                className={`flex-1 text-center py-3 font-medium transition-all duration-200 ${activeTab === tab.id ? 'text-black' : 'text-gray-500'}`}
               >
                 {tab.label}
               </button>
@@ -102,7 +117,7 @@ const Profile = () => {
               }}
             />
           </div>
-          <div className="w-full flex overflow-auto overflow-x-hidden">
+          <div className="w-full flex overflow-y-auto scroll-hidden">
             {activeTab === 'tabs' && (
               adminData?.systemLogs?.kiosk?.length > 0 ? (
                 <div className='flex flex-col gap-4'>
@@ -134,10 +149,72 @@ const Profile = () => {
               )
             )}
             {activeTab === 'editor' && (
-              <div>
-                <h2 className="text-xl font-semibold mb-2">Map Editor</h2>
-                <p>Map editor tools and settings go here.</p>
-              </div>
+              (adminData?.systemLogs?.mapEditor?.room?.length > 0 || adminData?.systemLogs?.mapEditor?.building?.length > 0) ? (
+                <div className='flex flex-col gap-4 w-full py-2'> {/* Added px-2 for padding */}
+                  {[...adminData.systemLogs.mapEditor.room, ...adminData.systemLogs.mapEditor.building]
+                    .sort((a, b) => new Date(b.dateOfChange) - new Date(a.dateOfChange))
+                    .map((log, index) => {
+                      return (
+                        <div key={index} className='w-[33.5rem] py-[1.5625rem] px-[1.6875rem] bg-[#FBF9F6] shadow-md rounded'> {/* Changed w-full to w-[33.5rem] and added rounded */}
+                          <div className='flex justify-between gap-4'>
+                            <div className='flex flex-col gap-[.5rem] text-[.875rem] flex-1'>
+                              <span className='font-roboto font-medium text-black'>{log.description}</span>
+                              {log.type === 'room' && (
+                                <>
+                                  <span className='font-roboto font-light text-[#4B5563]'><span className='font-bold'>Room: </span>{log.roomName}</span>
+                                  <span className='font-roboto font-light text-[#4B5563]'><span className='font-bold'>Building: </span>{log.buildingName}</span>
+                                  <span className='font-roboto font-light text-[#4B5563]'><span className='font-bold'>Floor: </span>{log.floor}</span>
+                                </>
+                              )}
+                              {log.type === 'building' && (
+                                <>
+                                  <span className='font-roboto font-light text-[#4B5563]'><span className='font-bold'>Building: </span>{log.buildingName}</span>
+                                  <span className='font-roboto font-light text-[#4B5563]'><span className='font-bold'>Floors: </span>{log.numberOfFloors}</span>
+                                </>
+                              )}
+                              {log.kioskName && (
+                                <span className='font-roboto font-light text-[#4B5563]'><span className='font-bold'>Kiosk: </span>{log.kioskName} ({log.kioskID})</span>
+                              )}
+                              {log.action === 'updated' && log.changes && (
+                                <div className='mt-2 p-2 bg-blue-50 rounded border-l-4 border-blue-200'>
+                                  <span className='font-roboto font-medium text-blue-800 text-xs'>Changes Made:</span>
+                                  <ul className='mt-1 text-xs text-blue-700'>
+                                    {log.changes.name && <li>• Name: "{log.changes.name.old}" → "{log.changes.name.new}"</li>}
+                                    {log.changes.description && <li>• Description updated</li>}
+                                    {log.changes.floor && <li>• Floor: {log.changes.floor.old} → {log.changes.floor.new}</li>}
+                                    {log.changes.numberOfFloor && <li>• Floors: {log.changes.numberOfFloor.old} → {log.changes.numberOfFloor.new}</li>}
+                                    {log.changes.navigationPath && <li>• Navigation path updated</li>}
+                                    {log.changes.navigationGuide && <li>• Navigation guide updated</li>}
+                                    {log.changes.images && <li>• Images updated</li>}
+                                  </ul>
+                                </div>
+                              )}
+                              <span className='font-roboto font-light text-[#4B5563] mt-2'>
+                                {new Date(log.dateOfChange).toLocaleString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  hour12: true,
+                                })}
+                              </span>
+                            </div>
+                            <button className='h-[1.8125rem] px-[.875rem] bg-[#D1D6FA] text-[#110D79] text-[.875rem] flex gap-[0.8125rem] items-center justify-center rounded hover:bg-[#B8C5F0] transition-colors'>
+                              <ShowIconTwo />
+                              <span>View</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className='flex flex-col items-center justify-center text-center py-8'>
+                  <p className='text-gray-500 font-medium'>No map editor logs available.</p>
+                  <p className='text-gray-400 text-sm mt-1'>Room and building activities will appear here.</p>
+                </div>
+              )
             )}
           </div>
         </div>
