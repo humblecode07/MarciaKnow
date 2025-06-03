@@ -518,14 +518,14 @@ export const ProfileImageModal = ({ isOpen, onClose, onSave, currentProfileImage
 export const UploadStatusModal = ({
    isOpen,
    onClose,
-   status, // 'success', 'error', or 'loading'
+   status, 
    title,
    message,
    autoClose = true,
    autoCloseDelay = 3000
 }) => {
-   // Auto close for success messages
-   React.useEffect(() => {
+
+   useEffect(() => {
       if (isOpen && status === 'success' && autoClose) {
          const timer = setTimeout(() => {
             onClose();
@@ -608,7 +608,7 @@ export const UploadStatusModal = ({
          className='fixed inset-0 bg-black/50 z-50 flex items-center justify-center font-roboto'
          onClick={handleBackdropClick}
       >
-         <div className='bg-white rounded-lg shadow-xl p-8 w-[25rem] max-w-[90vw] text-center flex flex-col items-center justify-center'>
+         <div className='bg-white shadow-xl p-8 w-[25rem] max-w-[90vw] text-center flex flex-col items-center justify-center'>
             {getIcon()}
 
             <h2 className={`text-xl font-bold mb-2 ${colors.title}`}>

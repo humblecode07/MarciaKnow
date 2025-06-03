@@ -318,6 +318,29 @@ export const enableAdmin = async (adminID) => {
    }
 }
 
+export const resetAdminPassword = async (adminID) => {
+   try {
+      const response = await axiosPrivate.put(`/admin/${adminID}/reset-password`);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const deleteAdminAccount = async (adminID) => {
+   try {
+      const response = await axiosPrivate.delete(`/admin/${adminID}/delete-admin`);
+      return response.data;
+   }
+   catch (error) {
+      console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+
 export const logQrCodeScan = async (buildingId, kioskId, buildingName = null) => {
    try {
       const response = await axiosPrivate.post(`/qrscan/${buildingId}/${kioskId}`, {

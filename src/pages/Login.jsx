@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Carousel from "../components/Carousel";
 import yangaLogo from '../../public/Photos/yangaLogo.png';
 import { axiosPrivate } from '../api/api';
-import { jwtDecode } from 'jwt-decode';  
+import { jwtDecode } from 'jwt-decode';
 import useAuth from '../hooks/useAuth';
 
 const superAdminRole = Number(import.meta.env.VITE_ROLE_SUPER_ADMIN);
@@ -54,13 +54,18 @@ const Login = () => {
 
          if (roles.includes(adminRole) || roles.includes(superAdminRole)) {
             navigate('/admin/');
-         } 
+         }
          else {
             setError('Unknown role.');
          }
       } catch (error) {
          console.error(error);
-         setError('Invalid email or password. Please try again.');
+         
+         if (error?.response?.status === 403 && error.response.data.message.includes('disabled')) {
+            setError('Your account has been disabled by a Super Admin.');
+         } else {
+            setError('Invalid email or password. Please try again.');
+         }
       }
    };
 
