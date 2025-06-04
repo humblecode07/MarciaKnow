@@ -5,19 +5,27 @@ import InfoIcon from '../../assets/Icons/InfoIcon';
 import QRCodeIcon from '../../assets/Icons/QRCodeIcon';
 import SentIconSMIcon from '../../assets/Icons/SentIconSMIcon';
 import FullscreenIcon from '../../assets/Icons/FullscreenIcon';
-import { fetchBuildings, fetchKiosks } from '../../api/api';
+import { fetchBuildings } from '../../api/api';
 import { useLocation } from 'react-router-dom';
 import useRenderMap from '../../hooks/useRenderMap';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import usePathNavigation from '../../hooks/usePathNavigation';
 import QRCode from "react-qr-code";
 
-const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, setCurrentPath, kiosk, setRoom, setBuilding, height, width }) => {
-   const { data: kiosksData, error: kiosksError, isLoading: kiosksLoading } = useQuery({
-      queryKey: ['kiosks'],
-      queryFn: fetchKiosks,
-   });
-
+const CampusMap = ({
+   mode,
+   coordinates,
+   onPositionSelect,
+   data,
+   currentPath,
+   setCurrentPath,
+   kiosk,
+   setKiosk,
+   setRoom,
+   setBuilding,
+   height,
+   width,
+   kiosksData
+}) => {
    const location = useLocation();
    const path = location.pathname;
 
@@ -30,13 +38,12 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
 
    const [isSelectedRoomOpen, setIsSelectedRoomOpen] = useState(false);
    const [selectedRoom, setSelectedRoom] = useState(null);
-   const [selectedKiosk, setSelectedKiosk] = useState(kiosk || null);
 
    const [kioskCoords, setKioskCoords] = useState(null);
    const [destinationCoords, setDestinationCoords] = useState(null);
+   const [isLoadingBuildings, setIsLoadingBuildings] = useState(true);
 
    // Functions
-
    const handleSelectBuilding = useCallback((building) => {
       setSelectedBuilding(building);
    }, []);
@@ -46,7 +53,7 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
       setIsBuildingInfoPanelOpen(false);
       setIsBuildingQRCodePanelOpen(false);
       setSelectedRoom(null);
-      setIsSelectedRoomOpen(false); // Added this to ensure room panel closes too
+      setIsSelectedRoomOpen(false);
    };
 
    const handleShowQRCode = () => {
@@ -54,115 +61,137 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
       setIsBuildingQRCodePanelOpen(true);
    }
 
-   // Handler for showing building info panel
    const handleShowBuildingInfo = () => {
       setIsBuildingInfoPanelOpen(true);
       setIsBuildingQRCodePanelOpen(false);
    }
 
+   const handleKioskChange = (e) => {
+      const selected = kiosksData.find(k => k.kioskID === e.target.value);
+      setKiosk(selected);
+   };
+
+   // ✅ FIXED: Single useEffect for loading buildings
    useEffect(() => {
       const getBuildings = async () => {
+         setIsLoadingBuildings(true);
          try {
             const data = await fetchBuildings();
             setBuildings(data);
          }
          catch (error) {
             console.error("Failed to load buildings:", error);
+         } finally {
+            setIsLoadingBuildings(false);
          }
       };
 
       getBuildings();
    }, []);
 
+   // ✅ FIXED: Proper dependency array and null checks
    useEffect(() => {
-      if (kiosksData?.length > 0 && selectedKiosk === null) {
-         setSelectedKiosk(kiosksData[0]);
-      }
-   }, [kiosksData]);
-
-   useEffect(() => {
-      if (selectedRoom && selectedBuilding && selectedKiosk) {
-         const updatedRoomData = selectedBuilding.existingRoom?.[selectedKiosk.kioskID]?.find(
+      if (selectedRoom && selectedBuilding && kiosk) {
+         const updatedRoomData = selectedBuilding.existingRoom?.[kiosk.kioskID]?.find(
             (room) => room._id === selectedRoom._id
          );
 
-         if (updatedRoomData) {
+         if (
+            updatedRoomData &&
+            updatedRoomData.navigationPath &&
+            (selectedRoom.navigationPath !== updatedRoomData.navigationPath)
+         ) {
             setSelectedRoom({
                ...updatedRoomData,
                building: selectedBuilding.name
             });
 
             setCurrentPath(updatedRoomData.navigationPath);
-
-            // if (path === '/') {
-            //    setRoom({
-            //       ...updatedRoomData,
-            //       building: selectedBuilding.name
-            //    })
-            // }
             console.log('updatedRoomData', updatedRoomData);
-
-         } else {
-            // If room doesn't exist for the new kiosk, optionally clear path or notify
+         } else if (!updatedRoomData?.navigationPath && currentPath) {
             setCurrentPath(null);
          }
       }
-   }, [selectedKiosk]);
-
-   const handleRoomNavigation = () => {
-      const newPath = selectedRoom.navigationPath;
-      setCurrentPath(newPath);
-      setRoom(selectedRoom);
-   }
-
-   const handleBuildingNavigation = () => {
-      const newPath = selectedBuilding.navigationPath[selectedKiosk.kioskID];
-      setCurrentPath(newPath);
-      setBuilding(selectedBuilding);
-      setIsBuildingInfoPanelOpen(false);
-   }
-
-   useRenderMap(svgRef, buildings, selectedBuilding, handleSelectBuilding, mode, coordinates, onPositionSelect, data?.selectedKiosk || selectedKiosk, currentPath, setCurrentPath);
+   }, [kiosk, selectedRoom, selectedBuilding, currentPath, setCurrentPath]);
 
 
-   if (kiosksLoading) return <div>Loading...</div>;
+   // ✅ NEW: Initialize navigation path on component mount
+   useEffect(() => {
+      // Restore navigation path if we have the necessary data
+      if (buildings.length > 0 && kiosk && selectedRoom && selectedBuilding && !currentPath) {
+         const roomData = selectedBuilding.existingRoom?.[kiosk.kioskID]?.find(
+            (room) => room._id === selectedRoom._id
+         );
 
-   if (kiosksError) {
-      console.error('Error fetching kiosks:', kiosksError);
-      return <div>Error loading kiosks data.</div>;
-   }
+         if (roomData?.navigationPath) {
+            setCurrentPath(roomData.navigationPath);
+         }
+      }
+   }, [buildings, kiosk, selectedRoom, selectedBuilding, currentPath, setCurrentPath]);
+
+   const handleRoomNavigation = useCallback(() => {
+      if (selectedRoom?.navigationPath) {
+         setCurrentPath(selectedRoom.navigationPath);
+         setRoom(selectedRoom);
+      }
+   }, [selectedRoom, setCurrentPath, setRoom]);
+
+   const handleBuildingNavigation = useCallback(() => {
+      if (selectedBuilding?.navigationPath?.[kiosk?.kioskID]) {
+         const newPath = selectedBuilding.navigationPath[kiosk.kioskID];
+         setCurrentPath(newPath);
+         setBuilding(selectedBuilding);
+         setIsBuildingInfoPanelOpen(false);
+      }
+   }, [selectedBuilding, kiosk, setCurrentPath, setBuilding]);
+
+   // ✅ FIXED: Added proper dependency array to useRenderMap
+   useRenderMap(
+      svgRef,
+      buildings,
+      selectedBuilding,
+      handleSelectBuilding,
+      mode,
+      coordinates,
+      onPositionSelect,
+      data?.selectedKiosk || kiosk,
+      currentPath,
+      setCurrentPath,
+      isLoadingBuildings
+   );
 
    // Fixed condition: Only show panels when we have a selectedBuilding AND it's not ADD_KIOSK mode
    const shouldShowBuildingPanels = selectedBuilding && (mode !== import.meta.env.VITE_ADD_KIOSK);
 
+   // console.log('currentPath', currentPath);
+
    return (
-      <section 
+      <section
          className='relative flex flex-col gap-[1rem]'
          style={{ height, width }}
       >
-         {mode === import.meta.env.VITE_TEST_KIOSK ?
+         {mode === import.meta.env.VITE_TEST_KIOSK && kiosksData && (
             <div className="w-[49.4375rem] h-[2.25rem] flex items-center justify-center bg-[#D1D6FA] border-solid border-[1px] border-[#110D79]">
-
                <select
                   id="kioskSelect"
                   aria-label="Select a kiosk"
                   className="w-[37.54dvw] h-full bg-transparent outline-none text-[.875rem] text-[#110D79] font-bold"
-                  onChange={(e) => {
-                     const selected = kiosksData.find(kiosk => kiosk.kioskID === e.target.value);
-                     setSelectedKiosk(selected);
-                  }}
+                  value={kiosk?.kioskID || ''}
+                  onChange={handleKioskChange}
                >
-                  {kiosksData?.map((kiosk) => (
+                  {kiosksData.map((k) => (
                      <option
-                        value={kiosk.kioskID}
-                        key={kiosk.kioskID}
+                        value={k.kioskID}
+                        key={k.kioskID}
                         className="bg-[#D1D6FA] text-black text-[.875rem]"
                      >
-                        {kiosk.name}
+                        {k.name}
                      </option>
                   ))}
                </select>
-            </div> : null}
+            </div>
+         )}
+
          <svg
             ref={svgRef}
             width={width}
@@ -198,8 +227,8 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
                      </div>
                   </div>
                   <div className='flex gap-[.875rem] relative z-10 overflow-x-auto'>
-                     {selectedBuilding?.existingRoom?.[selectedKiosk?.kioskID]?.length > 0 ? (
-                        selectedBuilding.existingRoom[selectedKiosk.kioskID].map((room) => {
+                     {selectedBuilding?.existingRoom?.[kiosk?.kioskID]?.length > 0 ? (
+                        selectedBuilding.existingRoom[kiosk.kioskID].map((room) => {
                            return (
                               <div
                                  key={room._id}
@@ -209,8 +238,17 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
                                     setIsSelectedRoomOpen(true);
                                  }}
                               >
-                                 <img className='w-[13.9375rem] h-[10.5625rem] object-cover overflow-hidden' src={`http://localhost:3000/image/${room?.image[0]?.file_path}`} alt={room.name} />
+                                 <img
+                                    className="w-[13.9375rem] h-[10.5625rem] object-cover overflow-hidden"
+                                    src={`http://localhost:3000/image/${room?.image[0]?.file_path}`}
+                                    alt={room.name}
+                                    onError={(e) => {
+                                       e.target.onerror = null;
+                                       e.target.src = "https://placehold.co/600x400?text=No+Image";
+                                    }}
+                                 />
                                  <span>{room.name}</span>
+
                               </div>
                            );
                         })
@@ -229,10 +267,15 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
                      >
                         <div className='w-[28.8125rem] h-[11.375rem] flex relative'>
                            <img
-                              src={`http://localhost:3000/image/${selectedBuilding.image[0].file_path}`}
-                              alt={selectedBuilding?.name}
+                              src={
+                                 selectedBuilding?.image[0]?.file_path
+                                    ? `http://localhost:3000/image/${selectedBuilding.image[0].file_path}`
+                                    : 'https://placehold.co/600x400'
+                              }
+                              alt={selectedBuilding?.name || 'Building'}
                               className='w-full h-full object-cover absolute'
                            />
+
                            <div className='w-full p-[15px] flex justify-end gap-[0.9375rem] z-10'>
                               <div
                                  className='w-[1.75rem] h-[1.75rem] flex justify-center items-center bg-[#505050] rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#6b6b6b] hover:scale-110'
@@ -259,7 +302,7 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
                            </div>
                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4">
                               <button
-                                 onClick={() => handleBuildingNavigation()}
+                                 onClick={handleBuildingNavigation}
                                  className="w-[12.25rem] h-[2.375rem] flex items-center justify-center gap-[0.6875rem] border-[#110D79] border-[1px] border-solid bg-[#D1D6FA] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#bfc4f5] hover:scale-105"
                               >
                                  <SentIconSMIcon />
@@ -296,7 +339,7 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
 
                         <div className='flex-1 flex flex-col items-center justify-center'>
                            <div className='w-[200px] h-[200px] bg-[#f0f0f0] flex items-center justify-center border border-gray-300'>
-                              <QRCode value={`http://localhost:5173/qr-code/${selectedBuilding._id}/edit-room/${selectedKiosk.kioskID}`} />
+                              <QRCode value={`http://localhost:5173/qr-code/${selectedBuilding._id}/edit-room/${kiosk?.kioskID}`} />
                            </div>
                            <p className='mt-4 text-center text-[.875rem] text-gray-600'>
                               Scan this QR code for information about {selectedBuilding.name}
@@ -328,7 +371,7 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
                            <div
                               onClick={() => {
                                  setIsSelectedRoomOpen(false);
-                                 setSelectedRoom(null); // Also clear selectedRoom
+                                 setSelectedRoom(null);
                               }}
                               className='w-[1.75rem] h-[1.75rem] flex justify-center items-center bg-[#f0f0f0] rounded-md cursor-pointer hover:bg-[#e0e0e0]'
                            >
@@ -340,6 +383,10 @@ const CampusMap = ({ mode, coordinates, onPositionSelect, data, currentPath, set
                            src={`http://localhost:3000/image/${selectedRoom?.image[0].file_path}`}
                            alt={selectedRoom.name}
                            className="w-full h-[200px] object-cover"
+                           onError={(e) => {
+                              e.target.onerror = null; // prevent infinite loop if placeholder fails
+                              e.target.src = "https://placehold.co/600x400?text=No+Image";
+                           }}
                         />
 
                         <div>

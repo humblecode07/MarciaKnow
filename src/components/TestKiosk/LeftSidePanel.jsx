@@ -92,8 +92,8 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
          onBuildingSelect(item);
 
          const newPath = item.navigationPath;
-         console.log(newPath);
-         // setCurrentPath(newPath);
+         console.log(newPath[kiosk.kioskID]);
+         setCurrentPath(newPath[kiosk.kioskID]);
       }
       else if (type === 'room') {
          onRoomSelect(item);

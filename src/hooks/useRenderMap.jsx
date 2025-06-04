@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3';
 import { useLocation } from 'react-router-dom';
 
-const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mode, coordinates, onPositionSelect, selectedKiosk, currentPath, setCurrentPath) => {
+const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mode, coordinates, onPositionSelect, selectedKiosk, currentPath, setCurrentPath, isLoadingBuildings) => {
    const location = useLocation();
    const path = location.pathname;
 
@@ -14,6 +14,9 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
    // coords of kiosk for edit kiosk mode
    useEffect(() => {
+
+      if (isLoadingBuildings || !svgRef.current || buildings.length === 0) return;
+
       if (path.includes("edit-kiosk") && coordinates) {
          setX(coordinates.x);
          setY(coordinates.y);
@@ -291,61 +294,152 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          g.selectAll(".temp-path").remove();
          g.selectAll(".path-point-marker").remove();
 
-         // Create a new temporary path for drawing
-         let drawingPath = g.append("path")
-            .attr("class", "temp-path")
-            .attr("fill", "none")
-            .attr("stroke", 'black')
-            .attr("stroke-width", 3)
-            .attr("stroke-dasharray", "5,5");
+         // Create enhanced navigation path with gradient and glow effects
+         const createEnhancedPath = () => {
+            // Create gradient definitions
+            const defs = g.append("defs");
+
+            // Create gradient for the main path
+            const gradient = defs.append("linearGradient")
+               .attr("id", "pathGradient")
+               .attr("gradientUnits", "userSpaceOnUse");
+
+            gradient.append("stop")
+               .attr("offset", "0%")
+               .attr("stop-color", "#667eea")
+               .attr("stop-opacity", 0.9);
+
+            gradient.append("stop")
+               .attr("offset", "100%")
+               .attr("stop-color", "#764ba2")
+               .attr("stop-opacity", 0.9);
+
+            // Create a filter for glow effect
+            const filter = defs.append("filter")
+               .attr("id", "glow")
+               .attr("x", "-50%")
+               .attr("y", "-50%")
+               .attr("width", "200%")
+               .attr("height", "200%");
+
+            filter.append("feGaussianBlur")
+               .attr("stdDeviation", "3")
+               .attr("result", "coloredBlur");
+
+            const feMerge = filter.append("feMerge");
+            feMerge.append("feMergeNode").attr("in", "coloredBlur");
+            feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
+            // Create shadow path (background glow)
+            const shadowPath = g.append("path")
+               .attr("class", "temp-path shadow-path")
+               .attr("fill", "none")
+               .attr("stroke", "#667eea")
+               .attr("stroke-width", 8)
+               .attr("stroke-opacity", 0.3)
+               .attr("filter", "url(#glow)");
+
+            // Create main navigation path with gradient
+            const mainPath = g.append("path")
+               .attr("class", "temp-path main-path")
+               .attr("fill", "none")
+               .attr("stroke", "url(#pathGradient)")
+               .attr("stroke-width", 5)
+               .attr("stroke-linecap", "round")
+               .attr("stroke-linejoin", "round");
+
+            // Create animated dashed overlay for movement effect
+            const animatedPath = g.append("path")
+               .attr("class", "temp-path animated-path")
+               .attr("fill", "none")
+               .attr("stroke", "#ffffff")
+               .attr("stroke-width", 2)
+               .attr("stroke-dasharray", "8,12")
+               .attr("stroke-linecap", "round")
+               .attr("opacity", 0.8);
+
+            // Animate the dashed line
+            animatedPath
+               .append("animateTransform")
+               .attr("attributeName", "stroke-dashoffset")
+               .attr("values", "0;20")
+               .attr("dur", "2s")
+               .attr("repeatCount", "indefinite");
+
+            return { shadowPath, mainPath, animatedPath };
+         };
+
+         const pathElements = createEnhancedPath();
 
          // Update path display with current path points
          const updatePath = () => {
-            if (currentPath.length < 2) {
-               drawingPath.attr("d", "");
+            if (!currentPath || currentPath.length < 2) {
+               pathElements.shadowPath.attr("d", "");
+               pathElements.mainPath.attr("d", "");
+               pathElements.animatedPath.attr("d", "");
                return;
             }
 
-            // Create a D3 line generator
+            // Create a smooth curved line generator
             const lineGenerator = d3.line()
                .x(d => d.x)
                .y(d => d.y)
-               .curve(d3.curveCardinal); // Smooths the line
+               .curve(d3.curveCardinal.tension(0.3)); // Smooth curves with slight tension
 
-            drawingPath.attr("d", lineGenerator(currentPath));
+            const pathData = lineGenerator(currentPath);
+            pathElements.shadowPath.attr("d", pathData);
+            pathElements.mainPath.attr("d", pathData);
+            pathElements.animatedPath.attr("d", pathData);
+
             updatePointMarkers();
          };
 
          if (selectedKiosk) {
-            renderDestinationMarker(g, selectedKiosk.coordinates.x, selectedKiosk.coordinates.y, "#FF5722", "You Are Here");
+            renderDestinationMarker(g, selectedKiosk.coordinates.x, selectedKiosk.coordinates.y, "#6366f1", "You Are Here");
          }
 
-         // Add markers for path points
+         // Add enhanced markers for path points
          const updatePointMarkers = () => {
             // Remove existing point markers
             g.selectAll(".path-point-marker").remove();
             g.selectAll(".destination-marker").remove();
 
-            // Add point markers
+            // Add point markers with enhanced styling
             currentPath.forEach((point, index) => {
-               // For the first point (start), use orange marker
+               // For the first point (start), use purple marker
                if (index === 0) {
-                  renderDestinationMarker(g, point.x, point.y, "#FF5722", "You Are Here");
+                  renderDestinationMarker(g, point.x, point.y, "#6366f1", "You Are Here");
                }
-               // For the last point (destination), use teal marker
+               // For the last point (destination), use complementary purple
                else if (index === currentPath.length - 1) {
-                  renderDestinationMarker(g, point.x, point.y, "#009688", "Destination");
+                  renderDestinationMarker(g, point.x, point.y, "#8b5cf6", "Destination");
                }
-               // For intermediate points (optional), use smaller pins or circles
+               // For intermediate points, use subtle waypoint markers
                else {
-                  g.append("circle")
-                     .attr("class", "path-point-marker")
-                     .attr("cx", point.x)
-                     .attr("cy", point.y)
+                  const waypointGroup = g.append("g")
+                     .attr("class", "path-point-marker waypoint")
+                     .attr("transform", `translate(${point.x}, ${point.y})`);
+
+                  // Outer glow circle
+                  waypointGroup.append("circle")
+                     .attr("r", 8)
+                     .attr("fill", "#667eea")
+                     .attr("opacity", 0.3);
+
+                  // Inner circle
+                  waypointGroup.append("circle")
                      .attr("r", 4)
-                     .attr("fill", "#607D8B") // Medium gray-blue color for intermediate points
-                     .attr("stroke", "#FFFFFF")
-                     .attr("stroke-width", 1.5);
+                     .attr("fill", "#667eea")
+                     .attr("stroke", "#ffffff")
+                     .attr("stroke-width", 2);
+
+                  // Add subtle pulse animation
+                  waypointGroup.select("circle:first-child")
+                     .append("animate")
+                     .attr("attributeName", "r")
+                     .attr("values", "6;12;6")
+                     .attr("dur", "3s")
+                     .attr("repeatCount", "indefinite");
                }
             });
          };
@@ -466,7 +560,7 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
             backgroundRect.on("click", null);
          }
       };
-   }, [svgRef, selectedBuilding, onSelectBuilding, buildings, mode, onPositionSelect, x, y, currentPath, setCurrentPath, selectedKiosk]);
+   }, [svgRef, selectedBuilding, onSelectBuilding, buildings, mode, onPositionSelect, x, y, currentPath, setCurrentPath, selectedKiosk, isLoadingBuildings])
 
    useEffect(() => {
       if (selectedKiosk && mode === import.meta.env.VITE_ADD_ROOM || selectedKiosk && mode === import.meta.env.VITE_TEST_KIOSK || selectedKiosk && mode === import.meta.env.VITE_QR_CODE_KIOSK || selectedKiosk && mode === import.meta.env.VITE_CLIENT_KIOSK) {
@@ -477,45 +571,106 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
       }
    }, [selectedKiosk, mode, setCurrentPath]);
 
-   // Helper function for rendering destination markers
+   // Enhanced helper function for rendering destination markers
    const renderDestinationMarker = (g, x, y, color, label) => {
       // Create a group for the marker
       const markerGroup = g.append("g")
          .attr("class", "destination-marker saved-path")
          .attr("transform", `translate(${x}, ${y})`);
 
-      // Create a teardrop/pin shape similar to the image
+      // Create gradient for the pin
+      const defs = g.select("defs").size() > 0 ? g.select("defs") : g.append("defs");
+
+      const pinGradient = defs.append("radialGradient")
+         .attr("id", `pinGradient-${x}-${y}`)
+         .attr("cx", "30%")
+         .attr("cy", "30%");
+
+      pinGradient.append("stop")
+         .attr("offset", "0%")
+         .attr("stop-color", d3.color(color).brighter(0.3));
+
+      pinGradient.append("stop")
+         .attr("offset", "100%")
+         .attr("stop-color", color);
+
+      // Create shadow for depth
+      markerGroup.append("ellipse")
+         .attr("cx", 2)
+         .attr("cy", 18)
+         .attr("rx", 12)
+         .attr("ry", 4)
+         .attr("fill", "rgba(0,0,0,0.2)");
+
+      // Create enhanced teardrop/pin shape
       markerGroup.append("path")
          .attr("d", `
-         M0,-24
-         C10,-24 16,-18 16,-8
-         C16,4 0,16 0,16
-         C0,16 -16,4 -16,-8
-         C-16,-18 -10,-24 0,-24
+         M0,-28
+         C12,-28 20,-20 20,-8
+         C20,6 0,20 0,20
+         C0,20 -20,6 -20,-8
+         C-20,-20 -12,-28 0,-28
          Z
          `)
-         .attr("fill", color || "#FF5722") // Orange color like in the image
-         .attr("stroke", "#FFFFFF")
-         .attr("stroke-width", 1.5);
+         .attr("fill", `url(#pinGradient-${x}-${y})`)
+         .attr("stroke", "#ffffff")
+         .attr("stroke-width", 2)
+         .attr("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.3))");
 
-      // Add inner circle for the pin hole effect
+      // Add inner highlight circle
       markerGroup.append("circle")
-         .attr("cy", -14)
-         .attr("r", 5)
-         .attr("fill", "#FFFFFF");
+         .attr("cy", -16)
+         .attr("r", 6)
+         .attr("fill", "#ffffff")
+         .attr("opacity", 0.9);
 
-      // Optionally add label if provided
+      // Add a small inner dot for the pin hole effect
+      markerGroup.append("circle")
+         .attr("cy", -16)
+         .attr("r", 2)
+         .attr("fill", color);
+
+      // Add subtle pulse animation to the pin
+      markerGroup.select("path")
+         .append("animateTransform")
+         .attr("attributeName", "transform")
+         .attr("type", "scale")
+         .attr("values", "1;1.1;1")
+         .attr("dur", "2s")
+         .attr("repeatCount", "indefinite");
+
+      // Enhanced label with better styling
       if (label && label !== "") {
-         markerGroup.append("text")
-            .attr("y", 24)
+         const labelGroup = markerGroup.append("g")
+            .attr("class", "marker-label");
+
+         // Label background for better readability
+         const labelText = labelGroup.append("text")
+            .attr("y", 32)
             .attr("text-anchor", "middle")
-            .attr("fill", "#000000")
-            .attr("stroke", "#FFFFFF")
-            .attr("stroke-width", 0.5)
-            .attr("paint-order", "stroke")
-            .attr("font-size", "10px")
-            .attr("font-weight", "bold")
+            .attr("font-size", "11px")
+            .attr("font-weight", "600")
+            .attr("font-family", "system-ui, -apple-system, sans-serif")
             .text(label);
+
+         // Get text dimensions for background
+         const textBBox = labelText.node().getBBox();
+
+         // Add background rectangle
+         labelGroup.insert("rect", "text")
+            .attr("x", textBBox.x - 4)
+            .attr("y", textBBox.y - 2)
+            .attr("width", textBBox.width + 8)
+            .attr("height", textBBox.height + 4)
+            .attr("rx", 4)
+            .attr("fill", "rgba(255, 255, 255, 0.9)")
+            .attr("stroke", color)
+            .attr("stroke-width", 1);
+
+         // Style the text
+         labelText
+            .attr("fill", color)
+            .attr("paint-order", "stroke");
       }
 
       return markerGroup;

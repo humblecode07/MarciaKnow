@@ -52,14 +52,20 @@ const MapEditor = () => {
     }));
   };
 
-  const handleRoomDelete = async (e, buildingID, kioskID, roomID) => {
+  const handleRoomDelete = async (e, buildingID, roomID) => {
     e.preventDefault();
 
-    const confirmDelete = window.confirm("Are you sure you want to delete this room?");
+    const confirmDelete = window.confirm(
+      "⚠️ WARNING: This action will permanently delete ALL rooms from ALL kiosks in this building. " +
+      "This includes every existing room, regardless of which kiosk they belong to.\n\n" +
+      "This cannot be undone. Are you absolutely sure you want to continue?"
+    );
+
+
     if (!confirmDelete) return;
 
     try {
-      const response = await deleteRoom(buildingID, kioskID, roomID);
+      const response = await deleteRoom(buildingID, roomID);
       console.log(response);
       alert("Room deleted successfully!");
     } catch (error) {
@@ -99,7 +105,7 @@ const MapEditor = () => {
                     <AddIcon />
                     <span className='font-bold text-[.75rem]'>Add a Room</span>
                   </NavLink>
-                  <NavLink 
+                  <NavLink
                     to={`${building._id}/edit-building/${activeTab}`}
                     className='w-[7.3125rem] h-[1.875rem] flex items-center justify-center gap-[0.6875rem] text-[#1EAF34] border-solid border-[1px] border-[#1EAF34] bg-[#D1FAE5] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#A6F4C5]'
                   >
@@ -153,7 +159,7 @@ const MapEditor = () => {
                                       <span className='text-[#1EAF34] text-[.875rem]'>Edit</span>
                                     </NavLink>
                                     <button
-                                      onClick={(e) => handleRoomDelete(e, building._id, activeTab, room._id)}
+                                      onClick={(e) => handleRoomDelete(e, building._id, room._id)}
                                       className='flex items-center gap-[0.75rem] cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#991515]'
                                     >
                                       <DeleteIcon />

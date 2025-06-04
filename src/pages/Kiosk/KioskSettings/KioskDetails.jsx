@@ -170,7 +170,13 @@ const KioskDetails = () => {
                </div>
             </div>
             <div className='w-[48rem] h-[48rem] bg-[#FBFCF8] p-[1rem] shadow-md overflow-auto'>
-               <CampusMap mode={mode} coordinates={position} onPositionSelect={handleMapClick} />
+               <CampusMap
+                  mode={mode}
+                  coordinates={position}
+                  onPositionSelect={handleMapClick}
+                  width={'100%'}
+                  height={'100%'}
+               />
             </div>
          </div>
       </div>

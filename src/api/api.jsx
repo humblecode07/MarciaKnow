@@ -182,9 +182,9 @@ export const fetchRoomsFromKiosk = async (kioskID) => {
    }
 }
 
-export const deleteRoom = async (buildingID, kioskID, roomID) => {
+export const deleteRoom = async (buildingID, roomID) => {
    try {
-      const response = await axiosPrivate.delete(`/room/${buildingID}/${kioskID}/${roomID}`);
+      const response = await axiosPrivate.delete(`/room/${buildingID}/${roomID}`);
       return response.data;
    }
    catch (error) {

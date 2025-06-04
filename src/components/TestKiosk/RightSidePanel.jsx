@@ -4,7 +4,7 @@ import SentIcon from "../../assets/Icons/SentIcon"
 import yangaLogo from '../../../public/Photos/yangaLogo.png'
 import { askGroq } from '../../api/api'
 
-const RightSidePanel = ({ kiosk, width, height }) => {
+const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
    const [messages, setMessages] = useState([
       {
          id: 1,
@@ -12,13 +12,11 @@ const RightSidePanel = ({ kiosk, width, height }) => {
          sender: "ai"
       }
    ])
-
    const [inputMessage, setInputMessage] = useState('')
    const [isLoading, setIsLoading] = useState(false)
 
    const handleSendMessage = async (e) => {
       e.preventDefault()
-
       if (!inputMessage.trim()) return
 
       // Add user message to chat
@@ -35,17 +33,51 @@ const RightSidePanel = ({ kiosk, width, height }) => {
 
       try {
          const response = await askGroq(currentMessage, kiosk.kioskID)
+         console.log('AI Response:', response)
 
-         console.log(inputMessage);
-         console.log(response);
-
+         // Add AI message to chat
          const aiMessage = {
             id: Date.now() + 1,
             text: response.answer,
             sender: "ai"
          }
-
          setMessages(prev => [...prev, aiMessage])
+
+         // Handle location detection
+         if (response.detected_location && response.detected_location.name) {
+            const locationData = {
+               name: response.detected_location.name,
+               type: response.detected_location.type,
+               confidence: response.detected_location.confidence,
+               action: response.detected_location.action,
+               userQuery: currentMessage
+            }
+
+            console.log('Location detected:', locationData)
+
+            // Call the parent component's handler
+            if (onLocationDetected) {
+               onLocationDetected(locationData)
+            }
+
+            // Add a system message indicating action taken
+            if (response.detected_location.action === 'navigate') {
+               const systemMessage = {
+                  id: Date.now() + 2,
+                  text: `🗺️ I've started navigation to ${response.detected_location.name}. Check the map for directions!`,
+                  sender: "system"
+               }
+               setMessages(prev => [...prev, systemMessage])
+            } else if (response.detected_location.action === 'search') {
+               const systemMessage = {
+                  id: Date.now() + 2,
+                  text: `🔍 I've searched for "${response.detected_location.name}" in the system.`,
+                  sender: "system"
+               }
+               setMessages(prev => [...prev, systemMessage])
+            }
+         }
+
       } catch (error) {
          console.error('Error sending message:', error)
          const errorMessage = {
@@ -66,7 +98,7 @@ const RightSidePanel = ({ kiosk, width, height }) => {
    }
 
    return (
-      <section 
+      <section
          className='flex flex-col bg-[#FBFCF8] shadow-md relative font-righteous'
          style={{ width, height }}
       >
@@ -87,14 +119,17 @@ const RightSidePanel = ({ kiosk, width, height }) => {
          <div className='h-full py-[1.3125rem] px-[.75rem] flex flex-col gap-[1.3125rem] font-roboto font-light overflow-y-auto'>
             {messages.map((message) => (
                <div key={message.id} className={`flex gap-[0.8125rem] ${message.sender === 'user' ? 'justify-end' : ''}`}>
-                  {message.sender === 'ai' && (
+                  {(message.sender === 'ai' || message.sender === 'system') && (
                      <img
                         src={yangaLogo}
                         alt=""
                         className='w-[1.5rem] h-[1.5rem] object-cover'
                      />
                   )}
-                  <div className='px-[0.625rem] py-[.5rem] bg-[#F5F5F5] overflow-hidden'>
+                  <div className={`px-[0.625rem] py-[.5rem] overflow-hidden ${message.sender === 'system'
+                        ? 'bg-[#E8F5E8] border-l-4 border-[#4CAF50]'
+                        : 'bg-[#F5F5F5]'
+                     }`}>
                      <span className='text-[.75rem]'>
                         {message.text}
                      </span>
@@ -108,7 +143,6 @@ const RightSidePanel = ({ kiosk, width, height }) => {
                   )}
                </div>
             ))}
-
             {isLoading && (
                <div className='flex gap-[0.8125rem]'>
                   <img
