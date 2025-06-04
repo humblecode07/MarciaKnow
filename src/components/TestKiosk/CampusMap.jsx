@@ -163,7 +163,7 @@ const CampusMap = ({
    // Fixed condition: Only show panels when we have a selectedBuilding AND it's not ADD_KIOSK mode
    const shouldShowBuildingPanels = selectedBuilding && (mode !== import.meta.env.VITE_ADD_KIOSK);
 
-   // console.log('currentPath', currentPath);
+   console.log('currentPath', currentPath);
 
    return (
       <section

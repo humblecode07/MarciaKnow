@@ -12,6 +12,14 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
    const [x, setX] = useState(0);
    const [y, setY] = useState(0);
 
+   const isValidCoordinate = (coord) => {
+      return typeof coord === 'number' && !isNaN(coord) && isFinite(coord);
+   };
+
+   const isValidPoint = (point) => {
+      return point && isValidCoordinate(point.x) && isValidCoordinate(point.y);
+   };
+
    // coords of kiosk for edit kiosk mode
    useEffect(() => {
 
@@ -373,25 +381,39 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
          // Update path display with current path points
          const updatePath = () => {
-            if (!currentPath || currentPath.length < 2) {
+
+            const validPath = currentPath?.filter(isValidPoint) || [];
+
+            if (validPath.length < 2) {
                pathElements.shadowPath.attr("d", "");
                pathElements.mainPath.attr("d", "");
                pathElements.animatedPath.attr("d", "");
                return;
             }
 
-            // Create a smooth curved line generator
-            const lineGenerator = d3.line()
-               .x(d => d.x)
-               .y(d => d.y)
-               .curve(d3.curveCardinal.tension(0.3)); // Smooth curves with slight tension
+            try {
+               // Create a smooth curved line generator
+               const lineGenerator = d3.line()
+                  .x(d => d.x)
+                  .y(d => d.y)
+                  .curve(d3.curveCardinal.tension(0.3))
+                  .defined(d => isValidPoint(d)); // Only include defined points
 
-            const pathData = lineGenerator(currentPath);
-            pathElements.shadowPath.attr("d", pathData);
-            pathElements.mainPath.attr("d", pathData);
-            pathElements.animatedPath.attr("d", pathData);
+               const pathData = lineGenerator(validPath);
 
-            updatePointMarkers();
+               // Additional check to ensure pathData is valid
+               if (pathData && !pathData.includes('NaN')) {
+                  pathElements.shadowPath.attr("d", pathData);
+                  pathElements.mainPath.attr("d", pathData);
+                  pathElements.animatedPath.attr("d", pathData);
+               } else {
+                  console.warn('Generated path contains NaN values, skipping update');
+               }
+
+               updatePointMarkers();
+            } catch (error) {
+               console.error('Error updating path:', error);
+            }
          };
 
          if (selectedKiosk) {
@@ -447,23 +469,36 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          if (mode === import.meta.env.VITE_ADD_ROOM) {
             // Click handler for adding path points
             const handlePathClick = (event) => {
-               // Don't handle the click if it was already handled
                if (event.defaultPrevented) return;
 
-               // Prevent default to stop other handlers
                event.preventDefault();
                event.stopPropagation();
 
-               // Get coordinates relative to the SVG
-               const svgPoint = svg.node().createSVGPoint();
-               svgPoint.x = event.clientX;
-               svgPoint.y = event.clientY;
+               try {
+                  const svgPoint = svg.node().createSVGPoint();
+                  svgPoint.x = event.clientX;
+                  svgPoint.y = event.clientY;
 
-               // Transform to account for zoom/pan
-               const transformedPoint = svgPoint.matrixTransform(g.node().getScreenCTM().inverse());
+                  const matrix = g.node().getScreenCTM()?.inverse();
+                  if (!matrix) {
+                     console.warn('Could not get transformation matrix');
+                     return;
+                  }
 
-               // Add point to the current path
-               setCurrentPath(prev => [...prev, { x: transformedPoint.x, y: transformedPoint.y }]);
+                  const transformedPoint = svgPoint.matrixTransform(matrix);
+
+                  // Validate the transformed coordinates
+                  if (isValidPoint(transformedPoint)) {
+                     setCurrentPath(prev => [...prev, {
+                        x: transformedPoint.x,
+                        y: transformedPoint.y
+                     }]);
+                  } else {
+                     console.warn('Invalid coordinates calculated:', transformedPoint);
+                  }
+               } catch (error) {
+                  console.error('Error handling path click:', error);
+               }
             };
 
             // Add click handler to background for path creation
@@ -563,11 +598,23 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
    }, [svgRef, selectedBuilding, onSelectBuilding, buildings, mode, onPositionSelect, x, y, currentPath, setCurrentPath, selectedKiosk, isLoadingBuildings])
 
    useEffect(() => {
-      if (selectedKiosk && mode === import.meta.env.VITE_ADD_ROOM || selectedKiosk && mode === import.meta.env.VITE_TEST_KIOSK || selectedKiosk && mode === import.meta.env.VITE_QR_CODE_KIOSK || selectedKiosk && mode === import.meta.env.VITE_CLIENT_KIOSK) {
-         setCurrentPath([{
-            x: selectedKiosk.coordinates.x,
-            y: selectedKiosk.coordinates.y
-         }]);
+      if (selectedKiosk &&
+         (mode === import.meta.env.VITE_ADD_ROOM ||
+            mode === import.meta.env.VITE_TEST_KIOSK ||
+            mode === import.meta.env.VITE_QR_CODE_KIOSK ||
+            mode === import.meta.env.VITE_CLIENT_KIOSK)) {
+
+         // Validate coordinates before setting path
+         const coords = selectedKiosk.coordinates;
+         if (coords && isValidCoordinate(coords.x) && isValidCoordinate(coords.y)) {
+            setCurrentPath([{
+               x: coords.x,
+               y: coords.y
+            }]);
+         } else {
+            console.warn('Invalid selectedKiosk coordinates:', coords);
+            setCurrentPath([]);
+         }
       }
    }, [selectedKiosk, mode, setCurrentPath]);
 

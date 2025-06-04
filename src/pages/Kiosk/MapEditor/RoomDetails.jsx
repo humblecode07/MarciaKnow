@@ -164,11 +164,13 @@ const RoomDetails = () => {
       if (isEditBuildingMode) {
         // For building edit mode, allow kiosk selection with default to first
         setSelectedKiosk(kiosksData[0]);
-      } else if (kioskID) {
+      }
+      else if (kioskID) {
         // For room operations, use the specific kiosk from URL params
         const foundKiosk = kiosksData.find(k => k.kioskID === kioskID);
         setSelectedKiosk(foundKiosk);
-      } else if (isAddRoomMode) {
+      }
+      else if (isAddRoomMode) {
         // For add room without specific kiosk, use first available
         setSelectedKiosk(kiosksData[0]);
       }
@@ -228,29 +230,69 @@ const RoomDetails = () => {
   }, [buildingID, isEditBuildingMode]);
 
   // Update navigation guide and path when selectedKiosk changes (for building edit mode)
+  // Update navigation guide and path when selectedKiosk changes (for building edit mode)
   useEffect(() => {
     if (isEditBuildingMode && originalBuildingData && selectedKiosk) {
       const kioskId = selectedKiosk.kioskID;
 
+      console.log('watdafak is happening');
+      console.log('kioskID', kioskId);
+
+      // Get kiosk position as fallback - debug and try multiple property names
+      console.log('Selected kiosk data:', selectedKiosk);
+
+      const kioskPosition = {
+        x: selectedKiosk.x || selectedKiosk.positionX || selectedKiosk.position?.x || selectedKiosk.coordinates?.x || 0,
+        y: selectedKiosk.y || selectedKiosk.positionY || selectedKiosk.position?.y || selectedKiosk.coordinates?.y || 0
+      };
+
+      console.log('Calculated kiosk position:', kioskPosition);
+
       // Update navigation path for the selected kiosk
-      if (originalBuildingData.navigationPath && originalBuildingData.navigationPath[kioskId]) {
-        setCurrentPath([...originalBuildingData.navigationPath[kioskId]]);
+      if (originalBuildingData.navigationPath &&
+        originalBuildingData.navigationPath[kioskId] &&
+        Array.isArray(originalBuildingData.navigationPath[kioskId]) &&
+        originalBuildingData.navigationPath[kioskId].length > 0) {
+
+        // Filter out empty objects and invalid coordinates
+        const validPath = originalBuildingData.navigationPath[kioskId].filter(point =>
+          point &&
+          typeof point === 'object' &&
+          (point.x !== undefined || point.y !== undefined) &&
+          !Object.keys(point).every(key => point[key] === undefined || point[key] === null || point[key] === '')
+        );
+
+        if (validPath.length > 0) {
+          console.log('Using existing navigation path:', validPath);
+          setCurrentPath([...validPath]);
+        } else {
+          // No valid path points, initialize with kiosk position
+          console.log('No valid path points, using kiosk position:', kioskPosition);
+          setCurrentPath([kioskPosition]);
+        }
       } else {
         // If no path exists for this kiosk, initialize with kiosk position
-        const kioskPosition = {
-          x: selectedKiosk.x || selectedKiosk.positionX || 0,
-          y: selectedKiosk.y || selectedKiosk.positionY || 0
-        };
-
-        console.log('positionKiosk', kioskPosition);
-
+        console.log('No navigation path found, using kiosk position:', kioskPosition);
         setCurrentPath([kioskPosition]);
       }
 
       // Update navigation guide for the selected kiosk
-      if (originalBuildingData.navigationGuide && originalBuildingData.navigationGuide[kioskId]) {
-        setNavigationGuide([...originalBuildingData.navigationGuide[kioskId]]);
+      if (originalBuildingData.navigationGuide &&
+        originalBuildingData.navigationGuide[kioskId] &&
+        Array.isArray(originalBuildingData.navigationGuide[kioskId])) {
+
+        // Filter out empty objects from navigation guide
+        const validGuide = originalBuildingData.navigationGuide[kioskId].filter(guide =>
+          guide &&
+          typeof guide === 'object' &&
+          Object.keys(guide).length > 0 &&
+          !Object.keys(guide).every(key => guide[key] === undefined || guide[key] === null || guide[key] === '')
+        );
+
+        console.log('Setting navigation guide:', validGuide);
+        setNavigationGuide([...validGuide]);
       } else {
+        console.log('No navigation guide found, setting empty array');
         setNavigationGuide([]);
       }
     }
@@ -282,6 +324,8 @@ const RoomDetails = () => {
       getRoomData();
     }
   }, [isEditRoomMode, buildingID, roomID]);
+
+  console.log(selectedKiosk);
 
   if (kiosksLoading || navigationIconsLoading) return <div>Loading...</div>;
 
