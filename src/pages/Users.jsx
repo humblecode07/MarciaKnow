@@ -234,7 +234,7 @@ const Users = () => {
                 <div className='flex justify-between items-center'>
                   <div className='flex gap-[.75rem]'>
                     <img
-                      src={adminData.profile ? `http://localhost:3000/admin/profile/${adminData.profile}` : '/default-avatar.png'}
+                      src={adminData.profile ? `https://marciaknow-backend.vercel.app/admin/profile/${adminData.profile}` : '/default-avatar.png'}
                       alt=""
                       className='w-[3rem] h-[3rem] rounded-full object-cover'
                       onError={(e) => {

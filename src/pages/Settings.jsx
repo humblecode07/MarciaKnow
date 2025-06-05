@@ -215,7 +215,7 @@ const Settings = () => {
             </div>
             <img
                src={adminData?.profile
-                  ? `http://localhost:3000/admin/profile/${adminData.profile}`
+                  ? `https://marciaknow-backend.vercel.app/admin/profile/${adminData.profile}`
                   : '/default-profile.jpg'}
                className='w-[7.375rem] h-[7.375rem] rounded-full border-solid border-black border-1 object-cover'
                alt="Profile"
@@ -252,7 +252,7 @@ const Settings = () => {
             onClose={() => setIsProfileModalOpen(false)}
             onSave={handleProfileSave}
             currentProfileImage={adminData?.profile
-               ? `http://localhost:3000/admin/profile/${adminData.profile}`
+               ? `https://marciaknow-backend.vercel.app/admin/profile/${adminData.profile}`
                : null}
          />
          <UploadStatusModal
