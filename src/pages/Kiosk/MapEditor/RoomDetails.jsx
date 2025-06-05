@@ -229,8 +229,6 @@ const RoomDetails = () => {
     }
   }, [buildingID, isEditBuildingMode]);
 
-  // Update navigation guide and path when selectedKiosk changes (for building edit mode)
-  // Update navigation guide and path when selectedKiosk changes (for building edit mode)
   useEffect(() => {
     if (isEditBuildingMode && originalBuildingData && selectedKiosk) {
       const kioskId = selectedKiosk.kioskID;

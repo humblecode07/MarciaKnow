@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { axiosPrivate } from "../api/api";
 import { useCallback } from "react";
 import { useEffect } from "react";
 
+// Import the new chatbot API functions
+import {
+   fetchChatbotMetrics,
+   fetchChatbotInteractionLogs,
+   fetchPopularChatbotQueries,
+   fetchKioskChatbotPerformance
+} from "../api/api";
+
+// Existing fetch functions (keep all your existing functions)
 const fetchTotalScans = async (filters = {}) => {
    try {
       const params = new URLSearchParams();
       if (filters.kioskId) params.append('kioskId', filters.kioskId);
       if (filters.buildingId) params.append('buildingId', filters.buildingId);
-
       const response = await axiosPrivate.get(`/qrscan/reports/total?${params}`);
       return response.data;
    } catch (error) {
@@ -34,7 +42,6 @@ const fetchDailyScanReport = async (filters = {}) => {
       if (filters.endDate) params.append('endDate', filters.endDate);
       if (filters.kioskId) params.append('kioskId', filters.kioskId);
       if (filters.buildingId) params.append('buildingId', filters.buildingId);
-
       const response = await axiosPrivate.get(`/qrscan/reports/daily?${params}`);
       return response.data;
    } catch (error) {
@@ -58,7 +65,7 @@ const getDailySearchActivity = async () => {
       const response = await axiosPrivate.get(`/destinationlog/daily-search-activity`);
       return response.data;
    } catch (error) {
-      console.error('Error fetching frequent destinations:', error);
+      console.error('Error fetching daily search activity:', error);
       throw error;
    }
 };
@@ -70,7 +77,19 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
       frequentDestinations: [],
       totalDestinationSearches: 0,
       dailyScans: [],
-      dailySearches: []
+      dailySearches: [],
+      // New chatbot data
+      chatbot: {
+         totalInteractions: 0,
+         avgResponseTime: 0,
+         dailyInteractions: [],
+         commonQueries: [],
+         actionBreakdown: [],
+         locationDetectionStats: [],
+         kioskActivity: [],
+         popularQueries: [],
+         kioskPerformance: []
+      }
    });
 
    const [loading, setLoading] = useState(true);
@@ -84,7 +103,6 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
          // Calculate date range for daily scans
          const endDate = new Date();
          const startDate = new Date();
-
          switch (timeframe) {
             case 'week':
                startDate.setDate(endDate.getDate() - 7);
@@ -105,18 +123,27 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
             endDate: endDate.toISOString().split('T')[0]
          };
 
+         // Fetch all data including chatbot data
          const [
             totalScansData,
             buildingStatsData,
             frequentDestinationsData,
             dailyScanData,
-            dailySearches
+            dailySearches,
+            // New chatbot data fetches
+            chatbotMetrics,
+            popularQueries,
+            kioskPerformance
          ] = await Promise.all([
             fetchTotalScans(filters),
             fetchBuildingKioskStats(),
             fetchFrequentDestinations(timeframe),
             fetchDailyScanReport(dailyFilters),
-            getDailySearchActivity()
+            getDailySearchActivity(),
+            // Chatbot data
+            fetchChatbotMetrics(timeframe, filters.kioskID),
+            fetchPopularChatbotQueries(timeframe, filters.kioskID, 10),
+            fetchKioskChatbotPerformance(timeframe)
          ]);
 
          setData({
@@ -125,8 +152,21 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
             frequentDestinations: frequentDestinationsData.destinations,
             totalDestinationSearches: frequentDestinationsData.totalLogs,
             dailyScans: dailyScanData.data,
-            dailySearches: dailySearches.data
+            dailySearches: dailySearches.data,
+            // Set chatbot data
+            chatbot: {
+               totalInteractions: chatbotMetrics.data.totalInteractions,
+               avgResponseTime: chatbotMetrics.data.avgResponseTime,
+               dailyInteractions: chatbotMetrics.data.dailyInteractions,
+               commonQueries: chatbotMetrics.data.commonQueries,
+               actionBreakdown: chatbotMetrics.data.actionBreakdown,
+               locationDetectionStats: chatbotMetrics.data.locationDetectionStats,
+               kioskActivity: chatbotMetrics.data.kioskActivity,
+               popularQueries: popularQueries.data.queries,
+               kioskPerformance: kioskPerformance.data.performance
+            }
          });
+
       } catch (err) {
          setError('Failed to load dashboard data. Please try again later.');
          console.error('Dashboard loading error:', err);
@@ -149,6 +189,8 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
             ['Metric', 'Value'],
             ['Total QR Scans', data.totalScans],
             ['Total Searches', data.totalDestinationSearches],
+            ['Total Chatbot Interactions', data.chatbot.totalInteractions],
+            ['Average Response Time (ms)', data.chatbot.avgResponseTime.toFixed(2)],
             ['Most Active Building', data.buildingStats[0]?.buildingName || 'N/A'],
             [''],
             ['Building Statistics'],
@@ -159,9 +201,26 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
                building.kioskCount
             ]),
             [''],
+            ['Popular Chatbot Queries'],
+            ['Query', 'Count', 'Last Asked', 'Avg Response Time'],
+            ...data.chatbot.popularQueries.map(query => [
+               query.query,
+               query.count,
+               new Date(query.lastAsked).toLocaleDateString(),
+               query.avgResponseTime.toFixed(2)
+            ]),
+            [''],
             ['Daily Scans'],
             ['Date', 'Scans'],
-            ...data.dailyScans.map(day => [day.reportDate, day.totalScans])
+            ...data.dailyScans.map(day => [day.reportDate, day.totalScans]),
+            [''],
+            ['Daily Chatbot Interactions'],
+            ['Date', 'Interactions', 'Avg Response Time'],
+            ...data.chatbot.dailyInteractions.map(day => [
+               day._id,
+               day.count,
+               day.avgResponseTime.toFixed(2)
+            ])
          ];
 
          const csvContent = csvData.map(row => row.join(',')).join('\n');
@@ -180,20 +239,17 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
       }
    }, [data]);
 
-   // Helper functions
+   // Helper functions (keep existing ones and add new chatbot ones)
    const getMostActiveKiosk = useCallback(() => {
       if (!data.buildingStats || data.buildingStats.length === 0) {
          return { id: 'No Data', interactions: 0 };
       }
-
       let mostActiveKiosk = { id: 'No Data', interactions: 0 };
-
       data.buildingStats.forEach(building => {
          if (building.kiosks && building.kiosks.length > 0) {
             const topKiosk = building.kiosks.reduce((prev, current) =>
                (prev.totalScans > current.totalScans) ? prev : current
             );
-
             if (topKiosk.totalScans > mostActiveKiosk.interactions) {
                mostActiveKiosk = {
                   id: topKiosk.kioskId,
@@ -202,7 +258,6 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
             }
          }
       });
-
       return mostActiveKiosk;
    }, [data.buildingStats]);
 
@@ -210,13 +265,35 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
       if (!data.buildingStats || data.buildingStats.length === 0) {
          return { name: 'No Data', totalScans: 0 };
       }
-
-      const topBuilding = data.buildingStats[0]; // Already sorted by totalScans desc
+      const topBuilding = data.buildingStats[0];
       return {
          name: topBuilding.buildingName || 'Unknown Building',
          totalScans: topBuilding.totalScans
       };
    }, [data.buildingStats]);
+
+   // New chatbot helper functions
+   const getMostActiveChatbotKiosk = useCallback(() => {
+      if (!data.chatbot.kioskActivity || data.chatbot.kioskActivity.length === 0) {
+         return { id: 'No Data', interactions: 0 };
+      }
+      const topKiosk = data.chatbot.kioskActivity[0];
+      return {
+         id: topKiosk._id,
+         interactions: topKiosk.interactions
+      };
+   }, [data.chatbot.kioskActivity]);
+
+   const getMostPopularQuery = useCallback(() => {
+      if (!data.chatbot.popularQueries || data.chatbot.popularQueries.length === 0) {
+         return { query: 'No Data', count: 0 };
+      }
+      const topQuery = data.chatbot.popularQueries[0];
+      return {
+         query: topQuery.query,
+         count: topQuery.count
+      };
+   }, [data.chatbot.popularQueries]);
 
    return {
       data,
@@ -225,6 +302,8 @@ export const useReportsData = (timeframe = 'month', filters = {}) => {
       refetch,
       exportData,
       getMostActiveKiosk,
-      getMostActiveBuilding
+      getMostActiveBuilding,
+      getMostActiveChatbotKiosk,
+      getMostPopularQuery
    };
 };

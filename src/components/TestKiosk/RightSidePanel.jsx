@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import DangoMenuIcon from "../../assets/Icons/DangoMenuIcon"
 import SentIcon from "../../assets/Icons/SentIcon"
 import yangaLogo from '../../../public/Photos/yangaLogo.png'
-import { askGroq } from '../../api/api'
+import { askGroq, logChatbotInteraction } from '../../api/api'
 
 const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
    const [messages, setMessages] = useState([
@@ -14,6 +14,7 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
    ])
    const [inputMessage, setInputMessage] = useState('')
    const [isLoading, setIsLoading] = useState(false)
+   const sessionIdRef = useRef(Date.now().toString()) // Generate session ID once
 
    const handleSendMessage = async (e) => {
       e.preventDefault()
@@ -31,9 +32,13 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
       setInputMessage('')
       setIsLoading(true)
 
+      const startTime = Date.now()
+
       try {
          const response = await askGroq(currentMessage, kiosk.kioskID)
          console.log('AI Response:', response)
+
+         const responseTime = Date.now() - startTime
 
          // Add AI message to chat
          const aiMessage = {
@@ -42,6 +47,28 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
             sender: "ai"
          }
          setMessages(prev => [...prev, aiMessage])
+
+         // Prepare interaction data for logging
+         const interactionData = {
+            kioskID: kiosk.kioskID,
+            userMessage: currentMessage,
+            aiResponse: response.answer,
+            detectedLocation: response.detected_location || {},
+            responseTime: responseTime,
+            sessionId: sessionIdRef.current
+         }
+
+         // Log the interaction to the backend
+         try {
+            const response = await logChatbotInteraction(interactionData);
+            console.log('success', response);
+            console.log('Interaction logged successfully');
+         }
+         catch (logError) {
+            console.error('Failed to log interaction:', logError);
+            // Optionally show user a non-intrusive warning
+            // but don't break the chat experience
+         }
 
          // Handle location detection
          if (response.detected_location && response.detected_location.name) {
@@ -52,7 +79,6 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
                action: response.detected_location.action,
                userQuery: currentMessage
             }
-
             console.log('Location detected:', locationData)
 
             // Call the parent component's handler
@@ -64,7 +90,7 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
             if (response.detected_location.action === 'navigate') {
                const systemMessage = {
                   id: Date.now() + 2,
-                  text: `🗺️ I've started navigation to ${response.detected_location.name}. Check the map for directions!`,
+                  text: `🗺 I've started navigation to ${response.detected_location.name}. Check the map for directions!`,
                   sender: "system"
                }
                setMessages(prev => [...prev, systemMessage])
@@ -77,15 +103,34 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
                setMessages(prev => [...prev, systemMessage])
             }
          }
-
-      } catch (error) {
+      }
+      catch (error) {
          console.error('Error sending message:', error)
+         const responseTime = Date.now() - startTime
+
          const errorMessage = {
             id: Date.now() + 1,
             text: "Sorry, I'm having trouble responding right now. Please try again.",
             sender: "ai"
          }
          setMessages(prev => [...prev, errorMessage])
+
+         // Log error interaction
+         try {
+            const errorInteractionData = {
+               kioskID: kiosk.kioskID,
+               userMessage: currentMessage,
+               aiResponse: "Error: Failed to get response",
+               detectedLocation: {},
+               responseTime: responseTime,
+               sessionId: sessionIdRef.current
+            }
+
+            const response = await logChatbotInteraction(errorInteractionData);
+            console.log(response);
+         } catch (logError) {
+            console.error('Failed to log error interaction:', logError)
+         }
       } finally {
          setIsLoading(false)
       }
@@ -127,8 +172,8 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
                      />
                   )}
                   <div className={`px-[0.625rem] py-[.5rem] overflow-hidden ${message.sender === 'system'
-                        ? 'bg-[#E8F5E8] border-l-4 border-[#4CAF50]'
-                        : 'bg-[#F5F5F5]'
+                     ? 'bg-[#E8F5E8] border-l-4 border-[#4CAF50]'
+                     : 'bg-[#F5F5F5]'
                      }`}>
                      <span className='text-[.75rem]'>
                         {message.text}

@@ -478,3 +478,87 @@ export const fetchDashboardStats = async () => {
       throw error;
    }
 };
+
+export const fetchChatbotMetrics = async (timeframe = 'month', kioskID = null) => {
+   try {
+      const params = new URLSearchParams();
+      if (timeframe) params.append('timeframe', timeframe);
+      if (kioskID) params.append('kioskID', kioskID);
+
+      const response = await axiosPrivate.get(`/chatbot/metrics?${params}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching chatbot metrics:', error);
+      throw error;
+   }
+};
+
+export const fetchChatbotInteractionLogs = async (filters = {}) => {
+   try {
+      const params = new URLSearchParams();
+      if (filters.timeframe) params.append('timeframe', filters.timeframe);
+      if (filters.kioskID) params.append('kioskID', filters.kioskID);
+      if (filters.page) params.append('page', filters.page);
+      if (filters.limit) params.append('limit', filters.limit);
+      if (filters.action) params.append('action', filters.action);
+      if (filters.sessionId) params.append('sessionId', filters.sessionId);
+
+      const response = await axiosPrivate.get(`/chatbot/interaction-logs?${params}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching chatbot interaction logs:', error);
+      throw error;
+   }
+};
+
+export const fetchPopularChatbotQueries = async (timeframe = 'month', kioskID = null, limit = 20) => {
+   try {
+      const params = new URLSearchParams();
+      if (timeframe) params.append('timeframe', timeframe);
+      if (kioskID) params.append('kioskID', kioskID);
+      if (limit) params.append('limit', limit);
+
+      const response = await axiosPrivate.get(`/chatbot/popular-queries?${params}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching popular chatbot queries:', error);
+      throw error;
+   }
+};
+
+export const fetchKioskChatbotPerformance = async (timeframe = 'month') => {
+   try {
+      const params = new URLSearchParams();
+      if (timeframe) params.append('timeframe', timeframe);
+
+      const response = await axiosPrivate.get(`/chatbot/kiosk-performance?${params}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching kiosk chatbot performance:', error);
+      throw error;
+   }
+};
+
+export const fetchChatbotSessionHistory = async (sessionId, limit = 100) => {
+   try {
+      const params = new URLSearchParams();
+      if (limit) params.append('limit', limit);
+
+      const response = await axiosPrivate.get(`/chatbot/session/${sessionId}?${params}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching chatbot session history:', error);
+      throw error;
+   }
+};
+
+// Log chatbot interaction (this should be called from your RightSidePanel)
+export const logChatbotInteraction = async (interactionData) => {
+   try {
+      const response = await axiosPrivate.post('/chatbot/interactions', interactionData);
+      return response.data;
+   } catch (error) {
+      console.error('Error logging chatbot interaction:', error);
+      throw error;
+   }
+};
