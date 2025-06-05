@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const axiosPrivate = axios.create({
-   baseURL: 'https://marciaknow-backend.vercel.app/',
+   baseURL: 'https://marciaknow-backend.vercel.app',
    withCredentials: true,
 });
 
