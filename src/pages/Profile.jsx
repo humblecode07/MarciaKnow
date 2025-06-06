@@ -49,7 +49,7 @@ const Profile = () => {
     <div className="flex gap-[3.375rem] ml-[19.5625rem] mt-[1.875rem] font-roboto">
       <div className='w-[20.375rem] flex flex-col gap-[1rem]'>
         <img
-          src={`http://localhost:3000/admin/profile/${adminData.profile}`}
+          src={`${import.meta.env.VITE_BASE_URL}/admin/profile/${adminData.profile}`}
           alt={adminData.full_name + "'s pfp"}
           className='w-full h-[20.375rem] rounded-full object-cover border-solid border-[1px] border-[#3D444D]'
         />

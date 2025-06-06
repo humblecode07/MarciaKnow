@@ -230,7 +230,7 @@ const CampusMap = ({
    // Helper function to get image URL
    const getImageUrl = useCallback((imagePath) => {
       if (!imagePath) return "https://placehold.co/600x400?text=No+Image";
-      return `http://localhost:3000/image/${imagePath}`;
+      return `${import.meta.env.VITE_BASE_URL}/image/${imagePath}`;
    }, []);
 
    return (
@@ -437,7 +437,7 @@ const CampusMap = ({
 
                   <div className='flex-1 flex flex-col items-center justify-center'>
                      <div className='w-[200px] h-[200px] bg-[#f0f0f0] flex items-center justify-center border border-gray-300 rounded-lg'>
-                        <QRCode value={`http://localhost:5173/qr-code/${selectedBuilding?._id}/edit-room/${currentKiosk?.kioskID}`} />
+                        <QRCode value={`${import.meta.env.VITE_BASE_URL}/qr-code/${selectedBuilding?._id}/edit-room/${currentKiosk?.kioskID}`} />
                      </div>
                      <p className='mt-4 text-center text-[.875rem] text-gray-600'>
                         Scan this QR code for information about {selectedBuilding?.name}
