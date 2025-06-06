@@ -416,7 +416,7 @@ const RoomDetails = () => {
                   {images.map((image, index) => {
                     const isFromBackend = typeof image === 'object' && image.data.file_path;
                     const imageUrl = isFromBackend
-                      ? `https://marciaknow-backend.vercel.app/image/${image.data.file_path}`
+                      ? `${import.meta.env.VITE_BASE_URL}/image/${image.data.file_path}`
                       : (image?.data instanceof File || image?.data instanceof Blob)
                         ? URL.createObjectURL(image.data)
                         : image;

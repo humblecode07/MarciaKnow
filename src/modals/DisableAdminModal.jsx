@@ -28,7 +28,7 @@ const DisableAdminModal = ({ isOpen, onClose, onConfirm, adminData, isLoading })
                </div>
                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                   <img
-                     src={adminData?.profile ? `https://marciaknow-backend.vercel.app/admin/profile/${adminData.profile}` : '/default-avatar.png'}
+                     src={adminData?.profile ? `${import.meta.env.VITE_BASE_URL}/admin/profile/${adminData.profile}` : '/default-avatar.png'}
                      alt=""
                      className="w-12 h-12 rounded-full object-cover"
                      onError={(e) => {

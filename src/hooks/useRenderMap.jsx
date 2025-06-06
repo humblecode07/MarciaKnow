@@ -22,14 +22,15 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
 
    // coords of kiosk for edit kiosk mode
    useEffect(() => {
-
       if (isLoadingBuildings || !svgRef.current || buildings.length === 0) return;
 
       if (path.includes("edit-kiosk") && coordinates) {
+
+
          setX(coordinates.x);
          setY(coordinates.y);
       }
-   }, [path, coordinates]);
+   }, [path, coordinates, buildings.length, isLoadingBuildings, svgRef]);
 
    // Helper function to calculate bounding box of path points
    const getPathBounds = (pathPoints) => {

@@ -22,8 +22,6 @@ const KioskDetails = () => {
       navigate(-1);
    };
 
-   console.log(kioskID);
-
    useEffect(() => {
       const path = location.pathname;
 

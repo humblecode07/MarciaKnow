@@ -187,6 +187,8 @@ const CampusMap = ({
       }
    }, [buildings, currentKiosk, selectedRoom, selectedBuilding, currentPath, setCurrentPath]);
 
+   console.log(coordinates);
+
    // Render map hook
    useRenderMap(
       svgRef,
@@ -227,7 +229,7 @@ const CampusMap = ({
    // Helper function to get image URL
    const getImageUrl = useCallback((imagePath) => {
       if (!imagePath) return "https://placehold.co/600x400?text=No+Image";
-      return `https://marciaknow-backend.vercel.app/image/${imagePath}`;
+      return `http://localhost:3000/image/${imagePath}`;
    }, []);
 
    return (

@@ -18,6 +18,10 @@ const KioskSettings = () => {
   if (error) return <p>Error: {error.message}</p>;
 
   const handleDeleteKiosk = async (kioskID) => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this kiosk? This action cannot be undone.');
+
+    if (!confirmDelete) return; 
+
     try {
       const deletedKiosk = await deleteKiosk(kioskID);
       if (deletedKiosk) {
@@ -27,7 +31,7 @@ const KioskSettings = () => {
     } catch (error) {
       console.error('Failed to delete kiosk:', error.message);
     }
-  }
+  };
 
   return (
     <div className="w-[73.98dvw] flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem]">
@@ -58,14 +62,14 @@ const KioskSettings = () => {
                     <ShowIconTwo />
                     <span className='text-[#110D79] text-[.875rem]'>Show</span>
                   </button>
-                  <NavLink 
+                  <NavLink
                     to={`edit-kiosk/${kiosk.kioskID}`}
                     className='flex gap-[.75rem] items-center cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#159A2B]'
                   >
                     <EditIcon />
                     <span className='text-[#1EAF34] text-[.875rem]'>Edit</span>
                   </NavLink>
-                  <button 
+                  <button
                     onClick={() => handleDeleteKiosk(kiosk.kioskID)}
                     className='flex gap-[.75rem] items-center cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#991515]'
                   >

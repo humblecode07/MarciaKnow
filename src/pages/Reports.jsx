@@ -477,25 +477,86 @@ const Reports = () => {
             {/* Action Breakdown */}
             <div className='bg-white p-4 rounded-lg shadow-sm'>
               <h4 className='font-bold text-[.875rem] text-[#4B5563] mb-2'>Action Breakdown</h4>
-              {data.chatbot.actionBreakdown.map((action, index) => (
-                <div key={index} className='flex justify-between items-center py-1'>
-                  <span className='text-[.75rem] text-[#6B7280] capitalize'>{action._id}</span>
-                  <span className='text-[.75rem] font-medium'>{action.count}</span>
-                </div>
-              ))}
+              {data.chatbot.actionBreakdown && data.chatbot.actionBreakdown.length > 0 ? (
+                data.chatbot.actionBreakdown.map((action, index) => {
+                  // Function to format action names for better readability
+                  const formatActionName = (actionId) => {
+                    if (!actionId) return 'Unknown Action';
+
+                    // Handle common action types
+                    const actionMap = {
+                      'search': 'Location Search',
+                      'navigate': 'Navigation Request',
+                      'info': 'Information Query',
+                      'help': 'Help Request',
+                      'feedback': 'User Feedback',
+                      'emergency': 'Emergency Assistance'
+                    };
+
+                    // Return mapped name or format the original
+                    return actionMap[actionId.toLowerCase()] ||
+                      actionId.replace(/[_-]/g, ' ')
+                        .split(' ')
+                        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                        .join(' ');
+                  };
+
+                  return (
+                    <div key={index} className='flex justify-between items-center py-1'>
+                      <span className='text-[.75rem] text-[#6B7280]'>
+                        {formatActionName(action._id)}
+                      </span>
+                      <span className='text-[.75rem] font-medium'>
+                        {action.count?.toLocaleString() || 0}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className='text-[.75rem] text-[#9CA3AF] italic'>No action data available</div>
+              )}
             </div>
 
-            {/* Location Detection Stats */}
+            {/* Location Detection Stats - Improved */}
             <div className='bg-white p-4 rounded-lg shadow-sm'>
               <h4 className='font-bold text-[.875rem] text-[#4B5563] mb-2'>Location Detection</h4>
-              {data.chatbot.locationDetectionStats.map((stat, index) => (
-                <div key={index} className='flex justify-between items-center py-1'>
-                  <span className='text-[.75rem] text-[#6B7280] capitalize'>{stat._id ? 'Successful' : 'Failed'}</span>
-                  <span className='text-[.75rem] font-medium'>{stat.count}</span>
-                </div>
-              ))}
-            </div>
+              {data.chatbot.locationDetectionStats && data.chatbot.locationDetectionStats.length > 0 ? (
+                data.chatbot.locationDetectionStats.map((stat, index) => {
+                  // Function to determine the status label
+                  const getStatusLabel = (statId) => {
+                    // Handle different possible values for _id
+                    if (statId === true || statId === 'true' || statId === 1 || statId === 'success') {
+                      return 'Successful';
+                    } else if (statId === false || statId === 'false' || statId === 0 || statId === 'failed') {
+                      return 'Failed';
+                    } else if (typeof statId === 'string') {
+                      // If it's a string, format it nicely
+                      return statId.charAt(0).toUpperCase() + statId.slice(1).toLowerCase();
+                    }
+                    return 'Unknown Status';
+                  };
 
+                  const statusLabel = getStatusLabel(stat._id);
+                  const isSuccess = statusLabel === 'Successful';
+
+                  return (
+                    <div key={index} className='flex justify-between items-center py-1'>
+                      <div className='flex items-center gap-2'>
+                        <div className={`w-2 h-2 rounded-full ${isSuccess ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span className='text-[.75rem] text-[#6B7280]'>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <span className='text-[.75rem] font-medium'>
+                        {stat.count?.toLocaleString() || 0}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className='text-[.75rem] text-[#9CA3AF] italic'>No location detection data available</div>
+              )}
+            </div>
             {/* Most Active ChatBot Kiosk */}
             <div className='bg-white p-4 rounded-lg shadow-sm'>
               <h4 className='font-bold text-[.875rem] text-[#4B5563] mb-2'>Top ChatBot Kiosks</h4>

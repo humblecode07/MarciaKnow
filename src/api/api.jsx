@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const axiosPrivate = axios.create({
-   baseURL: 'https://marciaknow-backend.vercel.app',
+   baseURL: import.meta.env.VITE_BASE_URL,
    withCredentials: true,
 });
 
@@ -292,6 +292,16 @@ export const updateAdminStatus = async (data, adminID) => {
    }
    catch (error) {
       console.error('Error during fetching of data', error);
+      throw error;
+   }
+}
+
+export const fetchRecentAdminLogs = async (limit = 10) => {
+   try {
+      const response = await axiosPrivate.get(`/admin/recent-logs?limit=${limit}`);
+      return response.data;
+   } catch (error) {
+      console.error('Error fetching recent admin logs:', error);
       throw error;
    }
 }
