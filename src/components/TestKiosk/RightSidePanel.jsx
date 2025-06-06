@@ -34,6 +34,9 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
 
       const startTime = Date.now()
 
+      console.log('Kiosk prop:', kiosk);
+      console.log('Kiosk ID:', kiosk?.kioskID);
+
       try {
          const response = await askGroq(currentMessage, kiosk.kioskID)
          console.log('AI Response:', response)
