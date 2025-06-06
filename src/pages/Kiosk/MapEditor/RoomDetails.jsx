@@ -112,8 +112,6 @@ const RoomDetails = () => {
 
     const formData = new FormData();
 
-    console.log(buildingID);
-
     formData.append('kioskID', selectedKiosk.kioskID);
     formData.append('id', buildingID);
     formData.append('name', name);
@@ -206,7 +204,6 @@ const RoomDetails = () => {
       const fetchBuildingData = async () => {
         try {
           const response = await fetchBuilding(buildingID);
-          console.log('Fetched building data:', response);
 
           setBuildingName(response.name);
           setName(response.name);
@@ -233,18 +230,10 @@ const RoomDetails = () => {
     if (isEditBuildingMode && originalBuildingData && selectedKiosk) {
       const kioskId = selectedKiosk.kioskID;
 
-      console.log('watdafak is happening');
-      console.log('kioskID', kioskId);
-
-      // Get kiosk position as fallback - debug and try multiple property names
-      console.log('Selected kiosk data:', selectedKiosk);
-
       const kioskPosition = {
         x: selectedKiosk.x || selectedKiosk.positionX || selectedKiosk.position?.x || selectedKiosk.coordinates?.x || 0,
         y: selectedKiosk.y || selectedKiosk.positionY || selectedKiosk.position?.y || selectedKiosk.coordinates?.y || 0
       };
-
-      console.log('Calculated kiosk position:', kioskPosition);
 
       // Update navigation path for the selected kiosk
       if (originalBuildingData.navigationPath &&
@@ -279,7 +268,6 @@ const RoomDetails = () => {
         originalBuildingData.navigationGuide[kioskId] &&
         Array.isArray(originalBuildingData.navigationGuide[kioskId])) {
 
-        // Filter out empty objects from navigation guide
         const validGuide = originalBuildingData.navigationGuide[kioskId].filter(guide =>
           guide &&
           typeof guide === 'object' &&
@@ -287,8 +275,16 @@ const RoomDetails = () => {
           !Object.keys(guide).every(key => guide[key] === undefined || guide[key] === null || guide[key] === '')
         );
 
-        console.log('Setting navigation guide:', validGuide);
-        setNavigationGuide([...validGuide]);
+        // **Crucial Fix:** Map over validGuide to add a unique 'id' if it's missing
+        const guideWithIds = validGuide.map(guide => {
+          if (!guide.id) { // Check if 'id' property is missing
+            return { ...guide, id: uuidv4() }; // Add a new unique ID
+          }
+          return guide; // If it already has an ID, keep it
+        });
+
+        console.log('Setting navigation guide:', guideWithIds);
+        setNavigationGuide([...guideWithIds]); // Set the updated array with IDs
       } else {
         console.log('No navigation guide found, setting empty array');
         setNavigationGuide([]);
@@ -323,7 +319,7 @@ const RoomDetails = () => {
     }
   }, [isEditRoomMode, buildingID, roomID]);
 
-  console.log(selectedKiosk);
+  console.log(navigationGuide);
 
   if (kiosksLoading || navigationIconsLoading) return <div>Loading...</div>;
 

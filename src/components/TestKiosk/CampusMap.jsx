@@ -18,6 +18,7 @@ const PANEL_TYPES = {
    BUILDING_INFO: 'buildingInfo',
    BUILDING_QR: 'buildingQR',
    ROOM_DETAIL: 'roomDetail',
+   ROOM_QR: 'roomQR',
    FULLSCREEN_GALLERY: 'fullscreenGallery'
 };
 
@@ -297,11 +298,11 @@ const CampusMap = ({
                      availableRooms.map((room) => (
                         <div
                            key={room._id}
-                           className='flex flex-col gap-[0.875rem] items-center cursor-pointer transition-all duration-300 ease-in-out hover:opacity-80 flex-shrink-0'
+                           className='w-[13.9375rem] flex flex-col gap-[0.875rem] items-center cursor-pointer transition-all duration-300 ease-in-out hover:opacity-80 flex-shrink-0'
                            onClick={() => handleRoomClick(room)}
                         >
                            <img
-                              className="w-[13.9375rem] h-[10.5625rem] object-cover overflow-hidden rounded-md"
+                              className="w-full h-[10.5625rem] object-cover overflow-hidden rounded-md"
                               src={getImageUrl(room?.image?.[0]?.file_path)}
                               alt={room.name}
                               onError={(e) => {
@@ -309,8 +310,11 @@ const CampusMap = ({
                                  e.target.src = "https://placehold.co/600x400?text=No+Image";
                               }}
                            />
-                           <span className="text-center text-sm">{room.name}</span>
+                           <span className="text-center text-sm w-full truncate">
+                              {room.name}
+                           </span>
                         </div>
+
                      ))
                   ) : (
                      <div className="flex items-center justify-center w-full text-gray-300">
@@ -417,8 +421,6 @@ const CampusMap = ({
                </div>
             </>
          )}
-
-         {/* QR Code Panel */}
          {shouldShowBuildingPanels && currentPanel === PANEL_TYPES.BUILDING_QR && (
             <>
                <div className='absolute inset-0 bg-black opacity-40 z-10'></div>
@@ -459,16 +461,18 @@ const CampusMap = ({
             <>
                <div className='absolute inset-0 bg-black opacity-40 z-10'></div>
                <div className="w-[28.8125rem] h-auto max-h-[25.5rem] flex flex-col gap-[1rem] absolute z-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 overflow-auto bg-white shadow-lg p-6 rounded-lg">
-                  <div className='flex justify-between items-center'>
-                     <h3 className='text-[1.25rem] font-semibold'>{selectedRoom.name}</h3>
+                  <div className='flex justify-between items-center gap-4'>
+                     <h3 className='text-[1.25rem] font-semibold flex-1'>
+                        {selectedRoom.name}
+                     </h3>
+
                      <div
                         onClick={() => setCurrentPanel(PANEL_TYPES.BUILDING_OVERVIEW)}
-                        className='w-[1.75rem] h-[1.75rem] flex justify-center items-center bg-[#f0f0f0] rounded-md cursor-pointer hover:bg-[#e0e0e0] transition-colors'
+                        className='flex-shrink-0 w-[1.75rem] h-[1.75rem] flex justify-center items-center bg-[#f0f0f0] rounded-md cursor-pointer hover:bg-[#e0e0e0] transition-colors'
                      >
                         <XIcon />
                      </div>
                   </div>
-
                   <div className='relative'>
                      <img
                         src={getImageUrl(selectedRoom?.image?.[0]?.file_path)}
@@ -524,7 +528,7 @@ const CampusMap = ({
 
                   <div>
                      <p className='text-[#505050] text-sm mb-2'>
-                        Located in: <span className='text-black font-semibold'>{selectedRoom.building}</span>
+                        Located in: <span className='text-black font-semibold'>Floor {selectedRoom.floor}</span>
                      </p>
                      <p className='text-[.875rem] text-gray-700'>{selectedRoom.description || 'No description available.'}</p>
                   </div>
@@ -547,8 +551,6 @@ const CampusMap = ({
                </div>
             </>
          )}
-
-         {/* Fullscreen Image Gallery */}
          {currentPanel === PANEL_TYPES.FULLSCREEN_GALLERY && galleryImages.length > 0 && (
             <div className='fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center'>
                <div className='relative w-full h-full flex items-center justify-center'>
@@ -605,8 +607,8 @@ const CampusMap = ({
                               src={getImageUrl(img.file_path)}
                               alt={`Thumbnail ${index + 1}`}
                               className={`w-16 h-12 object-cover rounded cursor-pointer transition-all flex-shrink-0 ${index === currentImageIndex
-                                    ? 'ring-2 ring-white opacity-100'
-                                    : 'opacity-60 hover:opacity-80'
+                                 ? 'ring-2 ring-white opacity-100'
+                                 : 'opacity-60 hover:opacity-80'
                                  }`}
                               onClick={() => setCurrentImageIndex(index)}
                            />
