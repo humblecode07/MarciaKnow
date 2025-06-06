@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { deleteRoom, fetchBuildings } from '../../api/api';
+import { deleteRoom, fetchBuildings, pingAdmin } from '../../api/api';
 import AddIcon from '../../assets/Icons/AddIcon';
 import EditIcon from '../../assets/Icons/EditIcon';
 import ShowIcon from '../../assets/Icons/ShowIcon';
@@ -74,6 +74,15 @@ const MapEditor = () => {
     }
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      pingAdmin();
+    }, 30000);
+
+    pingAdmin();
+
+    return () => clearInterval(interval);
+  }, []);
 
   console.log(Object.values(activeTabsByBuilding)[0]);
 

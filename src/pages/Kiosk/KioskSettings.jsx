@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AddIcon from '../../assets/Icons/AddIcon'
-import { deleteKiosk, fetchKiosks } from '../../api/api';
+import { deleteKiosk, fetchKiosks, pingAdmin } from '../../api/api';
 import EditIcon from '../../assets/Icons/EditIcon';
 import DeleteIcon from '../../assets/Icons/DeleteIcon';
 import ShowIconTwo from '../../assets/Icons/ShowIconTwo';
@@ -14,13 +14,10 @@ const KioskSettings = () => {
     queryFn: fetchKiosks,
   });
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error.message}</p>;
-
   const handleDeleteKiosk = async (kioskID) => {
     const confirmDelete = window.confirm('Are you sure you want to delete this kiosk? This action cannot be undone.');
 
-    if (!confirmDelete) return; 
+    if (!confirmDelete) return;
 
     try {
       const deletedKiosk = await deleteKiosk(kioskID);
@@ -32,6 +29,20 @@ const KioskSettings = () => {
       console.error('Failed to delete kiosk:', error.message);
     }
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      pingAdmin();
+    }, 30000);
+
+    pingAdmin();
+
+    return () => clearInterval(interval);
+  }, []);
+
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
 
   return (
     <div className="w-[73.98dvw] flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem]">

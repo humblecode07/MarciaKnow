@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Divider from '../components/Divider';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { fetchAdmin, updateAdmin, updateAdminField, updateAdminPassword } from '../api/api';
+import { fetchAdmin, updateAdmin, updateAdminField, updateAdminPassword, pingAdmin } from '../api/api';
 import { EmailModal, PasswordModal, ProfileImageModal, UsernameModal, UploadStatusModal, ContactModal } from '../modals/SettingsModal';
 import { useEffect } from 'react';
 
@@ -103,6 +103,16 @@ const Settings = () => {
          setDescription(adminData.description || '');
       }
    }, [adminData]);
+
+   useEffect(() => {
+      const interval = setInterval(() => {
+         pingAdmin();
+      }, 30000);
+
+      pingAdmin();
+
+      return () => clearInterval(interval);
+   }, []);
 
    if (isLoading) return <p>Loading...</p>;
    if (error) return <p>Error: {error.message}</p>;
@@ -241,7 +251,7 @@ const Settings = () => {
             onSave={handleUploadField}
             currentUser={adminData?.username}
          />
-          <ContactModal
+         <ContactModal
             isOpen={isContactModalOpen}
             onClose={() => setIsContactModalOpen(false)}
             onSave={handleUploadField}

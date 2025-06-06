@@ -350,6 +350,15 @@ export const deleteAdminAccount = async (adminID) => {
    }
 }
 
+export const pingAdmin = async () => {
+   try {
+      const response = await axiosPrivate.post('/admin/ping');
+      return response.data;
+   }
+   catch (error) {
+      console.error('Ping failed:', error);
+   }
+};
 
 export const logQrCodeScan = async (buildingId, kioskId, buildingName = null) => {
    try {
@@ -566,6 +575,32 @@ export const fetchChatbotSessionHistory = async (sessionId, limit = 100) => {
 export const logChatbotInteraction = async (interactionData) => {
    try {
       const response = await axiosPrivate.post('/chatbot/interactions', interactionData);
+      return response.data;
+   } catch (error) {
+      console.error('Error logging chatbot interaction:', error);
+      throw error;
+   }
+};
+
+export const fetchFeedbacks = async (filters) => {
+   try {
+      const params = new URLSearchParams();
+      if (filters.category) params.append('category', filters.category);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.priority) params.append('priority', filters.priority);
+
+      const response = await axiosPrivate.get('/feedback');
+      console.log('Fetched feedback data:', response.data);
+      return response.data.data;
+   } catch (error) {
+      console.error('Error logging chatbot interaction:', error);
+      throw error;
+   }
+};
+
+export const updateFeedbackStatus = async (feedbackID, data) => {
+   try {
+      const response = await axiosPrivate.patch(`/feedback/${feedbackID}`, data);
       return response.data;
    } catch (error) {
       console.error('Error logging chatbot interaction:', error);

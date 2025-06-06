@@ -529,7 +529,7 @@ const CampusMap = ({
 
                   <div>
                      <p className='text-[#505050] text-sm mb-2'>
-                        Located in: <span className='text-black font-semibold'>Floor {selectedRoom.floor}</span>
+                        Located at: <span className='text-black font-semibold'>Floor {selectedRoom.floor}</span>
                      </p>
                      <p className='text-[.875rem] text-gray-700'>{selectedRoom.description || 'No description available.'}</p>
                   </div>

@@ -41,7 +41,14 @@ const Users = () => {
     setOpenDropdownId(prev => prev === adminId ? null : adminId);
   };
 
-  // Close dropdown when clicking outside
+  const isOnline = (lastSeen) => {
+    if (!lastSeen) return false;
+    const now = new Date();
+    const seen = new Date(lastSeen);
+    const threshold = 60 * 1000; // 1 minute threshold
+    return now - seen <= threshold;
+  };
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -66,7 +73,8 @@ const Users = () => {
       const isAdminSuperAdmin = admin.roles.includes(Number(import.meta.env.VITE_ROLE_SUPER_ADMIN));
       const roleText = isAdminSuperAdmin ? 'super admin' : 'admin';
       const roleMatch = roleText.includes(query);
-      const statusText = admin.status === 'online' ? 'active' : 'inactive';
+      const isCurrentlyOnline = isOnline(admin.lastSeen);
+      const statusText = isCurrentlyOnline ? 'active' : 'inactive';
       const statusMatch = statusText.includes(query);
       const contactMatch = admin.contact?.toLowerCase().includes(query);
 
@@ -249,8 +257,8 @@ const Users = () => {
                             {isAdminSuperAdmin(adminData) ? 'Super Admin' : 'Admin'}
                           </span>
                         </div>
-                        <span className={`font-roboto text-[.75rem] ${adminData.status === 'online' ? 'text-green-500' : 'text-red-500'}`}>
-                          {adminData.status === 'online' ? 'ONLINE' : 'OFFLINE'}
+                        <span className={`font-roboto text-[.75rem] ${isOnline(adminData.lastSeen) ? 'text-green-500' : 'text-red-500'}`}>
+                          {isOnline(adminData.lastSeen) ? 'ONLINE' : 'OFFLINE'}
                         </span>
                       </div>
                     </div>

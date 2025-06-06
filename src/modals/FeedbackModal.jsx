@@ -1,5 +1,4 @@
-import React, { useState, useRef } from 'react';
-import domtoimage from 'dom-to-image-more';
+import React, { useState } from 'react';
 import { axiosPrivate } from '../api/api';
 
 const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
@@ -13,11 +12,6 @@ const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
    });
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [submitStatus, setSubmitStatus] = useState(null);
-   const [screenshot, setScreenshot] = useState(null);
-   const [screenshotMetadata, setScreenshotMetadata] = useState(null);
-   const [isCapturing, setIsCapturing] = useState(false);
-   const fileInputRef = useRef(null);
-   const [attachments, setAttachments] = useState([]);
 
    const categories = ['Bug', 'Suggestion', 'Complaint', 'Praise'];
 
@@ -29,238 +23,6 @@ const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
       }));
    };
 
-   // Helper function to get image dimensions and metadata
-   const getImageMetadata = (file) => {
-      return new Promise((resolve) => {
-         if (!file.type.startsWith('image/')) {
-            // For non-image files, return default metadata
-            resolve({
-               width: 0,
-               height: 0,
-               aspect_ratio: 0,
-               size: file.size,
-               mimetype: file.type,
-               filename: file.name
-            });
-            return;
-         }
-
-         const img = new Image();
-         const url = URL.createObjectURL(file);
-
-         img.onload = () => {
-            const metadata = {
-               width: img.naturalWidth,
-               height: img.naturalHeight,
-               aspect_ratio: parseFloat((img.naturalWidth / img.naturalHeight).toFixed(2)),
-               size: file.size,
-               mimetype: file.type,
-               filename: file.name
-            };
-            URL.revokeObjectURL(url);
-            resolve(metadata);
-         };
-
-         img.onerror = () => {
-            URL.revokeObjectURL(url);
-            // Fallback metadata for corrupted images
-            resolve({
-               width: 0,
-               height: 0,
-               aspect_ratio: 0,
-               size: file.size,
-               mimetype: file.type,
-               filename: file.name
-            });
-         };
-
-         img.src = url;
-      });
-   };
-
-   const captureScreenshot = async () => {
-      setIsCapturing(true);
-
-      try {
-         // Get the target element to capture
-         const targetElement = document.body;
-
-         // Configure dom-to-image options
-         const options = {
-            quality: 0.8,
-            bgcolor: '#ffffff',
-            width: window.innerWidth,
-            height: window.innerHeight,
-            style: {
-               transform: 'scale(0.5)',
-               transformOrigin: 'top left',
-               width: window.innerWidth + 'px',
-               height: window.innerHeight + 'px'
-            },
-            filter: (node) => {
-               // Filter out elements that might cause issues
-               if (node.classList) {
-                  return !node.classList.contains('ignore-screenshot');
-               }
-               // Skip problematic elements
-               const tagName = node.tagName;
-               return !(tagName === 'IFRAME' || tagName === 'VIDEO' || tagName === 'EMBED' || tagName === 'OBJECT');
-            }
-         };
-
-         // Try different methods in order of preference
-         let blob;
-         let captureWidth = window.innerWidth;
-         let captureHeight = window.innerHeight;
-
-         try {
-            // Method 1: toPng (most compatible)
-            const dataUrl = await domtoimage.toPng(targetElement, options);
-            blob = await dataUrlToBlob(dataUrl);
-         } catch (error) {
-            console.warn('toPng failed, trying toJpeg:', error);
-
-            try {
-               // Method 2: toJpeg (fallback)
-               const dataUrl = await domtoimage.toJpeg(targetElement, {
-                  ...options,
-                  quality: 0.8
-               });
-               blob = await dataUrlToBlob(dataUrl);
-            } catch (jpegError) {
-               console.warn('toJpeg failed, trying alternative capture:', jpegError);
-
-               // Method 3: Capture specific container
-               const altResult = await tryAlternativeCapture();
-               if (altResult) {
-                  blob = altResult.blob;
-                  captureWidth = altResult.width;
-                  captureHeight = altResult.height;
-               }
-            }
-         }
-
-         if (blob) {
-            setScreenshot(blob);
-            // Store metadata for the screenshot
-            setScreenshotMetadata({
-               width: Math.floor(captureWidth * 0.5), // Adjusted for scale
-               height: Math.floor(captureHeight * 0.5),
-               aspect_ratio: parseFloat((captureWidth / captureHeight).toFixed(2)),
-               size: blob.size,
-               mimetype: blob.type,
-               filename: `screenshot-${Date.now()}.png`
-            });
-         }
-
-      } catch (error) {
-         console.error('Error capturing screenshot:', error);
-         alert('Unable to capture screenshot. Please try again or attach a file instead.');
-      } finally {
-         setIsCapturing(false);
-      }
-   };
-
-   // Alternative capture method - capture main content area
-   const tryAlternativeCapture = async () => {
-      const mainContent = document.querySelector('main') ||
-         document.querySelector('#root') ||
-         document.querySelector('.app') ||
-         document.querySelector('.container') ||
-         document.body.children[0];
-
-      if (mainContent) {
-         const rect = mainContent.getBoundingClientRect();
-         const options = {
-            quality: 0.7,
-            bgcolor: '#ffffff',
-            style: {
-               transform: 'scale(0.4)',
-               transformOrigin: 'top left'
-            },
-            filter: (node) => {
-               if (node.classList) {
-                  return !node.classList.contains('ignore-screenshot');
-               }
-               const tagName = node.tagName;
-               return !(tagName === 'IFRAME' || tagName === 'VIDEO' || tagName === 'EMBED');
-            }
-         };
-
-         try {
-            const dataUrl = await domtoimage.toPng(mainContent, options);
-            const blob = await dataUrlToBlob(dataUrl);
-            return {
-               blob,
-               width: rect.width,
-               height: rect.height
-            };
-         } catch (error) {
-            // Try JPEG as final fallback
-            const dataUrl = await domtoimage.toJpeg(mainContent, {
-               ...options,
-               quality: 0.6
-            });
-            const blob = await dataUrlToBlob(dataUrl);
-            return {
-               blob,
-               width: rect.width,
-               height: rect.height
-            };
-         }
-      }
-      return null;
-   };
-
-   const dataUrlToBlob = (dataUrl) => {
-      return new Promise((resolve) => {
-         const arr = dataUrl.split(',');
-         const mime = arr[0].match(/:(.*?);/)[1];
-         const bstr = atob(arr[1]);
-         let n = bstr.length;
-         const u8arr = new Uint8Array(n);
-         while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-         }
-         resolve(new Blob([u8arr], { type: mime }));
-      });
-   };
-
-   const handleFileSelect = async (e) => {
-      const files = Array.from(e.target.files);
-      if (files.length + attachments.length > 5) {
-         alert('Maximum 5 files allowed');
-         return;
-      }
-
-      // Process files and get metadata
-      const filesWithMetadata = await Promise.all(
-         files.map(async (file) => {
-            const metadata = await getImageMetadata(file);
-            return {
-               file,
-               metadata
-            };
-         })
-      );
-
-      setAttachments(prev => [...prev, ...filesWithMetadata]);
-   };
-
-   const removeAttachment = (index) => {
-      setAttachments(prev => prev.filter((_, i) => i !== index));
-   };
-
-   const removeScreenshot = () => {
-      setScreenshot(null);
-      setScreenshotMetadata(null);
-   };
-
-   const validateFileSize = (file, maxSizeMB = 10) => {
-      const maxSizeBytes = maxSizeMB * 1024 * 1024;
-      return file.size <= maxSizeBytes;
-   };
-
    const handleSubmit = async (e) => {
       e.preventDefault();
 
@@ -269,54 +31,13 @@ const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
          return;
       }
 
-      const oversizedFiles = attachments.filter(
-         ({ file }) => !validateFileSize(file, 10)
-      );
-
-      if (screenshot && !validateFileSize(screenshot, 10)) {
-         alert('Screenshot is too large (max 10MB)');
-         return;
-      }
-
-      if (oversizedFiles.length > 0) {
-         alert(`Some files are too large (max 10MB): ${oversizedFiles.map(f => f.metadata.filename).join(', ')}`);
-         return;
-      }
-
       setIsSubmitting(true);
       setSubmitStatus(null);
 
       try {
-         const submitData = new FormData();
-
-         // Add form fields
-         Object.keys(formData).forEach(key => {
-            submitData.append(key, formData[key]);
-         });
-
-         // Collect all metadata into a single array
-         const allAttachmentMetadata = [];
-
-         // If there's a screenshot, add it and its metadata first
-         if (screenshot && screenshotMetadata) {
-            submitData.append('attachments', screenshot, screenshotMetadata.filename);
-            allAttachmentMetadata.push(screenshotMetadata);
-         }
-
-         // Add other attachments and their metadata
-         attachments.forEach(({ file, metadata }) => {
-            submitData.append('attachments', file);
-            allAttachmentMetadata.push(metadata);
-         });
-
-         // ONLY append all metadata as a single JSON string ONCE
-         if (allAttachmentMetadata.length > 0) {
-            submitData.append('attachmentMetadata', JSON.stringify(allAttachmentMetadata));
-         }
-
-         const response = await axiosPrivate.post('/feedback/submit', submitData, {
+         const response = await axiosPrivate.post('/feedback/submit', formData, {
             headers: {
-               'Content-Type': 'multipart/form-data',
+               'Content-Type': 'application/json',
             },
          });
 
@@ -331,9 +52,6 @@ const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
                pageSection: '',
                kioskLocation: kiosk?.name || ''
             });
-            setScreenshot(null);
-            setScreenshotMetadata(null);
-            setAttachments([]);
             setSubmitStatus(null);
             onClose();
          }, 2000);
@@ -453,78 +171,6 @@ const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
                         className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#110D79] focus:border-transparent"
                      />
                   </div>
-               </div>
-
-               {/* Screenshot Section */}
-               <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                     Screenshot
-                  </label>
-                  <div className="flex gap-2 mb-2">
-                     <button
-                        type="button"
-                        onClick={captureScreenshot}
-                        disabled={isCapturing || screenshot}
-                        className="px-4 py-2 bg-[#4329D8] text-white rounded-md hover:bg-[#3422B8] disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
-                     >
-                        {isCapturing ? 'Capturing...' : screenshot ? 'Screenshot Captured' : 'Capture Screenshot'}
-                     </button>
-                     {screenshot && (
-                        <button
-                           type="button"
-                           onClick={removeScreenshot}
-                           className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 text-sm"
-                        >
-                           Remove Screenshot
-                        </button>
-                     )}
-                  </div>
-                  {screenshot && (
-                     <div className="text-sm text-green-600">
-                        ✓ Screenshot captured and ready to submit
-                     </div>
-                  )}
-               </div>
-
-               {/* File Attachments */}
-               <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                     Additional Files (Max 5)
-                  </label>
-                  <input
-                     type="file"
-                     ref={fileInputRef}
-                     onChange={handleFileSelect}
-                     multiple
-                     accept="image/*,.pdf,.doc,.docx,.txt"
-                     className="hidden"
-                  />
-                  <button
-                     type="button"
-                     onClick={() => fileInputRef.current?.click()}
-                     disabled={attachments.length >= 5}
-                     className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm"
-                  >
-                     Add Files ({attachments.length}/5)
-                  </button>
-
-                  {/* File List */}
-                  {attachments.length > 0 && (
-                     <div className="mt-2 space-y-1">
-                        {attachments.map((file, index) => (
-                           <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                              <span className="text-sm truncate">{file.name}</span>
-                              <button
-                                 type="button"
-                                 onClick={() => removeAttachment(index)}
-                                 className="text-red-500 hover:text-red-700 ml-2"
-                              >
-                                 Remove
-                              </button>
-                           </div>
-                        ))}
-                     </div>
-                  )}
                </div>
 
                {/* Kiosk Info */}

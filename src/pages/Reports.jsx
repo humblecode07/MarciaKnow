@@ -11,6 +11,7 @@ import { useReportsData } from '../hooks/useReportsData';
 import CommonPlacesChart from '../components/CommonPlacesChart';
 import SearchActivityChart from '../components/SearchActivityChart';
 import InteractionsLog from '../components/InteractionsLog';
+import { pingAdmin } from '../api/api';
 
 const Reports = () => {
   const [timeframe, setTimeframe] = useState('month');
@@ -222,6 +223,16 @@ const Reports = () => {
       console.error('Export failed:', error);
     }
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      pingAdmin();
+    }, 30000);
+
+    pingAdmin();
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (

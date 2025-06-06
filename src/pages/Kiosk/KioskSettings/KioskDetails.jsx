@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import CampusMap from '../../../components/TestKiosk/CampusMap'
 import { useNavigate, useParams } from 'react-router-dom'
-import { createKiosk, fetchKiosk, updateKiosk } from '../../../api/api';
+import { createKiosk, fetchKiosk, pingAdmin, updateKiosk } from '../../../api/api';
 import { useLocation } from 'react-router-dom';
 
 const KioskDetails = () => {
@@ -108,6 +108,16 @@ const KioskDetails = () => {
          }
       }
    };
+
+   useEffect(() => {
+      const interval = setInterval(() => {
+         pingAdmin();
+      }, 30000);
+
+      pingAdmin();
+
+      return () => clearInterval(interval);
+   }, []);
 
    return (
       <div className="flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem] font-roboto">

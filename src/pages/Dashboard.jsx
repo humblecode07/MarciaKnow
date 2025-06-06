@@ -9,8 +9,9 @@ import {
   fetchRecentScanLogs,
   fetchRecentDestinationSearch,
   fetchRecentAdminLogs,
-  fetchKiosks, 
-  fetchAdmins 
+  fetchKiosks,
+  fetchAdmins,
+  pingAdmin
 } from '../api/api';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -65,6 +66,16 @@ const Dashboard = () => {
     loadData();
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      pingAdmin();
+    }, 30000);
+
+    pingAdmin();
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Calculate kiosk statistics
   const kioskStats = useMemo(() => {
     if (!kiosks || kiosks.length === 0) {
@@ -84,16 +95,25 @@ const Dashboard = () => {
       return { online: 0, total: 0, percentage: 0 };
     }
 
-    const onlineAdmins = admins.filter(admin => admin.status === 'online' && !admin.isDisabled).length;
-    const totalAdmins = admins.filter(admin => !admin.isDisabled).length;
-    const percentage = totalAdmins > 0 ? Math.min((onlineAdmins / totalAdmins) * 100, 100) : 0;
+    const now = new Date();
+    const threshold = 60 * 1000; // 1 minute in ms
 
-    return { online: onlineAdmins, total: totalAdmins, percentage };
+    const activeAdmins = admins.filter(admin => {
+      if (admin.isDisabled || !admin.lastSeen) return false;
+      const lastSeen = new Date(admin.lastSeen);
+      return now - lastSeen <= threshold;
+    });
+
+    const totalAdmins = admins.filter(admin => !admin.isDisabled).length;
+    const percentage = totalAdmins > 0 ? Math.min((activeAdmins.length / totalAdmins) * 100, 100) : 0;
+
+    return {
+      online: activeAdmins.length,
+      total: totalAdmins,
+      percentage
+    };
   }, [admins]);
 
-  const combinedLogs = [...recentScans, ...recentSearches]
-    .sort((a, b) => new Date(b.timestamp || b.scannedAt) - new Date(a.timestamp || a.scannedAt))
-    .slice(0, 10);
 
   // Helper function to format admin action descriptions
   const formatAdminAction = (log) => {
@@ -195,6 +215,33 @@ const Dashboard = () => {
       successRate
     };
   }, [reportsData, reportsLoading]);
+
+  const combinedLogs = useMemo(() => {
+    const scanEntries = recentScans.map(scan => ({
+      ...scan,
+      type: 'QR Code',
+      timestamp: scan.scannedAt ? new Date(scan.scannedAt) : null
+    }));
+
+    const searchEntries = recentSearches.map(search => ({
+      ...search,
+      type: 'Search',
+      timestamp: search.timestamp ? new Date(search.timestamp) : null
+    }));
+
+    const adminEntries = recentAdminLogs.map(log => ({
+      ...log,
+      type: 'Admin',
+      timestamp: getLatestActivityTime(log)  // uses your helper function
+    }));
+
+    return [...scanEntries, ...searchEntries, ...adminEntries]
+      .filter(log => log.timestamp) // remove any with null timestamps
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 10);
+  }, [recentScans, recentSearches, recentAdminLogs]);
+
+  console.log(combinedLogs);
 
   return (
     <div className="w-[73.98dvw] flex gap-[1rem] ml-[19.5625rem] mt-[1.875rem]">
@@ -322,7 +369,7 @@ const Dashboard = () => {
                 </div>
                 <div className="px-4 py-3 flex flex-col gap-2">
                   <div className={`px-2 py-1 w-fit text-sm ${log.searchQuery ? 'bg-[#DBEAFE] text-[#1E40AF]' : 'bg-[#D1FAE5] text-[#065F46]'}`}>
-                    <span className="font-bold break-words">{log.searchQuery || log.buildingName}</span>
+                    <span className="font-bold break-words">{log.type || log.buildingName}</span>
                   </div>
                   <span className="font-bold">{log.searchQuery || log.buildingName}</span>
                   <span className="text-sm text-[#737373]">{new Date(log.timestamp || log.scannedAt).toLocaleString()}</span>

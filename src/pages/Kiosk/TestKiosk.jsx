@@ -3,7 +3,7 @@ import LeftSidePanel from '../../components/TestKiosk/LeftSidePanel';
 import RightSidePanel from '../../components/TestKiosk/RightSidePanel';
 import CampusMap from '../../components/TestKiosk/CampusMap';
 import { useQuery } from '@tanstack/react-query';
-import { fetchKiosks, fetchBuildings, fetchRooms } from '../../api/api';
+import { fetchKiosks, fetchBuildings, fetchRooms, pingAdmin } from '../../api/api';
 import { useLocationMatcher } from '../../hooks/useLocationMatcher';
 
 const TestKiosk = () => {
@@ -50,7 +50,7 @@ const TestKiosk = () => {
     }
 
     const matchResult = processAILocation(locationData);
-    
+
     if (matchResult && matchResult.item) {
       console.log('Location match found:', matchResult);
 
@@ -61,7 +61,7 @@ const TestKiosk = () => {
             const buildingItem = matchResult.item;
             setBuilding(buildingItem);
             setRoom(null); // Clear room selection
-            
+
             // Set navigation path
             if (buildingItem.navigationPath && buildingItem.navigationPath[kiosk.kioskID]) {
               setCurrentPath(buildingItem.navigationPath[kiosk.kioskID]);
@@ -70,7 +70,7 @@ const TestKiosk = () => {
             const roomItem = matchResult.item;
             setRoom(roomItem);
             setBuilding(null); // Clear building selection
-            
+
             // Set navigation path
             if (roomItem.navigationPath) {
               setCurrentPath(roomItem.navigationPath);
@@ -101,7 +101,7 @@ const TestKiosk = () => {
       }
     } else {
       console.log('No location match found for:', locationData.name);
-      
+
       // Show suggestions if available
       if (matchResult && matchResult.suggestions && matchResult.suggestions.length > 0) {
         console.log('Suggested alternatives:', matchResult.suggestions);
@@ -109,6 +109,16 @@ const TestKiosk = () => {
       }
     }
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      pingAdmin();
+    }, 30000);
+
+    pingAdmin();
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (kiosksLoading) return <div>Loading...</div>;
   if (kiosksError) {

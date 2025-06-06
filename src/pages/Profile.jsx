@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { fetchAdmin } from '../api/api';
 import { NavLink, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import CalendarIcon from '../assets/Icons/CalendarIcon';
 import { useState } from 'react';
 import ShowIconTwo from '../assets/Icons/ShowIconTwo';
 import CallIcon from '../assets/Icons/CallIcon';
+import { pingAdmin } from '../api/api';
 
 const Profile = () => {
   const { admin } = useAuth();
@@ -39,6 +40,15 @@ const Profile = () => {
     }
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      pingAdmin();
+    }, 30000);
+
+    pingAdmin();
+
+    return () => clearInterval(interval);
+  }, []);
 
   console.log(admin);
 

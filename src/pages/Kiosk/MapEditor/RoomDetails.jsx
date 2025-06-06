@@ -11,6 +11,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ResetIcon from '../../../assets/Icons/ResetIcon';
 import RevertIcon from '../../../assets/Icons/RevertIcon';
 import NavigationIconsModal from '../../../modals/NavigationIconsModal';
+import { pingAdmin } from '../../../api/api';
 
 const RoomDetails = () => {
   const { data: kiosksData, error: kiosksError, isLoading: kiosksLoading } = useQuery({
@@ -362,6 +363,16 @@ const RoomDetails = () => {
       getRoomData();
     }
   }, [isEditRoomMode, buildingID, roomID, selectedKiosk]); // Added selectedKiosk as dependency
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      pingAdmin();
+    }, 30000);
+
+    pingAdmin();
+
+    return () => clearInterval(interval);
+  }, []);
 
   console.log(currentPath);
 
