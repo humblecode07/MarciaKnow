@@ -61,6 +61,10 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
             sessionId: sessionIdRef.current
          }
 
+         console.log('Full AI Response:', response)
+         console.log('Response.answer:', response.answer)
+         console.log('Type of response.answer:', typeof response.answer)
+
          // Log the interaction to the backend
          try {
             const response = await logChatbotInteraction(interactionData);
