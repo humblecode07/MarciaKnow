@@ -8,22 +8,25 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchBuildings, fetchBuildingsFromSpecificKiosk, fetchRooms, fetchRoomsFromKiosk } from "../../api/api"
 import { logDestinationSearch } from "../../api/api" // Import your logging function
 import FeedbackModal from "../../modals/FeedbackModal"
+import RoomIcon from "../../assets/Icons/RoomIcon"
 
 const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, setCurrentPath, width, height }) => {
    const { data: buildings, error: buildingsError, isLoading: buildingsLoading } = useQuery({
-      queryKey: ['buildings'],
-      queryFn: () => fetchBuildingsFromSpecificKiosk(kiosk.kioskID)
+      queryKey: ['buildings', kiosk?.kioskID],
+      queryFn: () => fetchBuildingsFromSpecificKiosk(kiosk?.kioskID)
    });
 
    const { data: rooms, error: roomsError, isLoading: roomsLoading } = useQuery({
-      queryKey: ['rooms'],
-      queryFn: () => fetchRoomsFromKiosk(kiosk.kioskID),
+      queryKey: ['rooms', kiosk?.kioskID],
+      queryFn: () => fetchRoomsFromKiosk(kiosk?.kioskID),
    });
 
    const [search, setSearch] = useState('');
    const [showResults, setShowResults] = useState(false);
    // Add state for feedback modal
    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
+   console.log(kiosk?.kioskID)
 
    // Filter buildings and rooms based on search input
    const filteredResults = useMemo(() => {
@@ -159,6 +162,8 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
       setIsFeedbackModalOpen(false);
    };
 
+   console.log(rooms);
+
    if (buildingsLoading || roomsLoading) {
       return <div>Loading...</div>;
    }
@@ -255,7 +260,7 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
                                  onClick={() => handleResultClick(room, 'room')}
                               >
                                  <div className='flex-shrink-0'>
-                                    <RegisterIcon />
+                                    <RoomIcon />
                                  </div>
                                  <div className='flex flex-col min-w-0 flex-1'>
                                     <span className='text-[0.875rem] font-roboto font-medium truncate'>

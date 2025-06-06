@@ -124,7 +124,7 @@ export const fetchNavigationIcons = async () => {
 
 export const createRoom = async (data, buildingID, kioskID) => {
    try {
-      const response = await axiosPrivate.post(`/room/${buildingID}/${kioskID}`, data);
+      const response = await axiosPrivate.post(`/room/${buildingID}/kiosk/${kioskID}`, data);
 
       return response.data;
    }
@@ -172,7 +172,7 @@ export const fetchRooms = async () => {
 
 export const fetchRoomsFromKiosk = async (kioskID) => {
    try {
-      const response = await axiosPrivate.get(`/room/${kioskID}`);
+      const response = await axiosPrivate.get(`/room/kiosk/${kioskID}`);
 
       return response.data;
    }
@@ -182,16 +182,19 @@ export const fetchRoomsFromKiosk = async (kioskID) => {
    }
 }
 
-export const deleteRoom = async (buildingID, roomID) => {
+export const deleteRoom = async (buildingID, roomName, floor) => {
    try {
-      const response = await axiosPrivate.delete(`/room/${buildingID}/${roomID}`);
+      const response = await axiosPrivate.post(`/room/${buildingID}/delete`, {
+         roomName: roomName,
+         floor: floor
+      });
       return response.data;
-   }
-   catch (error) {
-      console.error('Error during fetching of data', error);
+   } catch (error) {
+      console.error('Error during room deletion', error);
       throw error;
    }
 }
+
 
 export const editBuilding = async (data, buildingID, kioskID) => {
    try {

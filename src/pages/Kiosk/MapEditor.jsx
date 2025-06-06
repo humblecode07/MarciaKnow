@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { deleteRoom, fetchBuildings, pingAdmin } from '../../api/api';
 import AddIcon from '../../assets/Icons/AddIcon';
 import EditIcon from '../../assets/Icons/EditIcon';
@@ -7,84 +7,159 @@ import HideIcon from '../../assets/Icons/HideIcon';
 import DeleteIcon from '../../assets/Icons/DeleteIcon';
 import ShowIconTwo from '../../assets/Icons/ShowIconTwo';
 import { NavLink } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const MapEditor = () => {
-  const [buildings, setBuildings] = useState([]);
+  const queryClient = useQueryClient();
+
+  const {
+    data: buildings = [],
+    isLoading: buildingsLoading,
+    error: buildingsError
+  } = useQuery({
+    queryKey: ['buildings'],
+    queryFn: async () => {
+      const data = await fetchBuildings();
+      return data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Local state for UI interactions
   const [expandedBuildings, setExpandedBuildings] = useState({});
+  const [currentActiveTabsByBuilding, setCurrentActiveTabsByBuilding] = useState({});
 
-  const [activeTabsByBuilding, setActiveTabsByBuilding] = useState({});
+  // Memoized function to get consistent building ID
+  const getBuildingId = useCallback((building) => building._id || building.id, []);
 
+  // Initialize active tabs when buildings data changes
   useEffect(() => {
-    const getBuildings = async () => {
-      try {
-        const data = await fetchBuildings();
+    if (buildings.length === 0) return;
 
-        const initialActiveTabsByBuilding = {};
-        data.forEach(building => {
-          const buildingId = building.id || building._id;
-          const tabs = Object.keys(building.existingRoom || {});
-          if (tabs.length > 0) {
-            initialActiveTabsByBuilding[buildingId] = tabs[0];
-          }
-        });
+    const initialTabs = {};
+    let hasNewTabs = false;
 
-        setActiveTabsByBuilding(initialActiveTabsByBuilding);
-        setBuildings(data);
-      } catch (error) {
-        console.error("Failed to load buildings:", error);
+    buildings.forEach(building => {
+      const buildingId = getBuildingId(building);
+      const tabs = Object.keys(building.existingRoom || {});
+
+      if (tabs.length > 0) {
+        // Keep existing selection if valid, otherwise use first tab
+        const currentTab = currentActiveTabsByBuilding[buildingId];
+        const newTab = tabs.includes(currentTab) ? currentTab : tabs[0];
+        initialTabs[buildingId] = newTab;
+
+        // Check if this is a new tab selection
+        if (currentTab !== newTab) {
+          hasNewTabs = true;
+        }
       }
-    };
+    });
 
-    getBuildings();
-  }, []);
+    // Only update if there are actual changes or if state is empty
+    if (hasNewTabs || Object.keys(currentActiveTabsByBuilding).length === 0) {
+      setCurrentActiveTabsByBuilding(prev => ({
+        ...prev,
+        ...initialTabs
+      }));
+    }
+  }, [buildings, getBuildingId]); // Removed currentActiveTabsByBuilding from dependencies
 
-  const toggleBuilding = (buildingId) => {
+  // Admin ping query
+  const { data: pingStatus } = useQuery({
+    queryKey: ['admin-ping'],
+    queryFn: async () => {
+      await pingAdmin();
+      return { lastPing: Date.now() };
+    },
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
+    retry: 3,
+    retryDelay: 5000,
+  });
+
+  // UI interaction handlers
+  const toggleBuilding = useCallback((buildingId) => {
     setExpandedBuildings(prev => ({
       ...prev,
       [buildingId]: !prev[buildingId]
     }));
-  };
+  }, []);
 
-  const setActiveTab = (buildingId, tabId) => {
-    setActiveTabsByBuilding(prev => ({
+  const setActiveTab = useCallback((buildingId, tabId) => {
+    setCurrentActiveTabsByBuilding(prev => ({
       ...prev,
       [buildingId]: tabId
     }));
-  };
+  }, []);
 
-  const handleRoomDelete = async (e, buildingID, roomID) => {
+  // Room deletion mutation
+  const deleteRoomMutation = useMutation({
+    mutationFn: async ({ buildingID, roomName, floor }) => {
+      return await deleteRoom(buildingID, roomName, floor);
+    },
+    onSuccess: (data) => {
+      console.log(data);
+      alert(`Room "${data.data.roomName}" on floor ${data.data.floor} deleted successfully from ${data.data.totalDeletedRooms} kiosk(s)!`);
+      queryClient.invalidateQueries(['buildings']);
+    },
+    onError: (error) => {
+      console.error("Failed to delete room:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to delete room.";
+      alert(`Error: ${errorMessage}`);
+    }
+  });
+
+  // Fixed room deletion handler
+  const handleRoomDelete = useCallback(async (e, buildingID, roomName, floor) => {
     e.preventDefault();
 
-    const confirmDelete = window.confirm(
-      "⚠️ WARNING: This action will permanently delete ALL rooms from ALL kiosks in this building. " +
-      "This includes every existing room, regardless of which kiosk they belong to.\n\n" +
-      "This cannot be undone. Are you absolutely sure you want to continue?"
-    );
+    // Find the specific building and count room instances
+    const targetBuilding = buildings.find(b => getBuildingId(b) === buildingID);
+    if (!targetBuilding) {
+      alert('Building not found');
+      return;
+    }
 
+    const roomInstances = Object.values(targetBuilding.existingRoom || {}).reduce((count, rooms) => {
+      return count + (rooms?.filter(room => room.name === roomName && room.floor === floor).length || 0);
+    }, 0);
+
+    const confirmDelete = window.confirm(
+      `⚠️ WARNING: You are about to delete the room "${roomName}" on floor ${floor}.\n\n` +
+      `This will permanently remove ${roomInstances} instance(s) of this room from all kiosks in this building.\n\n` +
+      "This action cannot be undone. Are you sure you want to continue?"
+    );
 
     if (!confirmDelete) return;
 
     try {
-      const response = await deleteRoom(buildingID, roomID);
-      console.log(response);
-      alert("Room deleted successfully!");
+      deleteRoomMutation.mutate({
+        buildingID,
+        roomName,
+        floor
+      });
     } catch (error) {
-      console.error("Failed to delete room:", error);
-      alert("Failed to delete room.");
+      console.error('Error initiating room deletion:', error);
     }
-  };
+  }, [buildings, getBuildingId, deleteRoomMutation]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      pingAdmin();
-    }, 30000);
+  // Handle loading and error states
+  if (buildingsLoading) {
+    return (
+      <div className="w-[73.98dvw] flex items-center justify-center ml-[19.5625rem] mt-[1.875rem] h-64">
+        <div className="text-lg">Loading buildings...</div>
+      </div>
+    );
+  }
 
-    pingAdmin();
-
-    return () => clearInterval(interval);
-  }, []);
-
-  console.log(Object.values(activeTabsByBuilding)[0]);
+  if (buildingsError) {
+    return (
+      <div className="w-[73.98dvw] flex items-center justify-center ml-[19.5625rem] mt-[1.875rem] h-64">
+        <div className="text-lg text-red-600">Error loading buildings: {buildingsError.message}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-[73.98dvw] flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem]">
@@ -94,10 +169,9 @@ const MapEditor = () => {
       </div>
       <section className='flex flex-col gap-[1rem]'>
         {buildings.map((building) => {
-
           const buildingId = building.id || building._id;
           const tabs = Object.keys(building.existingRoom || {});
-          const activeTab = activeTabsByBuilding[buildingId] || (tabs.length > 0 ? tabs[0] : null);
+          const activeTab = currentActiveTabsByBuilding[buildingId] || (tabs.length > 0 ? tabs[0] : null);
 
           return (
             <div
@@ -149,37 +223,35 @@ const MapEditor = () => {
                       </div>
 
                       <div className="mt-4">
-                        {building.existingRoom[activeTab].map((room) => (
-                          <>
-                            <div className='flex flex-col gap-[1.375rem] p-[1rem] bg-[#FBF9F6] shadow-md'>
-                              <div className='flex flex-col gap-[0.4375rem]'>
-                                <div className='flex justify-between'>
-                                  <span className='font-bold'>{room?.name}</span>
-                                  <div className='flex gap-[2rem]'>
-                                    <button className='flex items-center gap-[0.75rem]'>
-                                      <ShowIconTwo />
-                                      <span className='text-[#110D79] text-[.875rem]'>Show</span>
-                                    </button>
-                                    <NavLink
-                                      to={`${building._id}/edit-room/${activeTab}/${room._id}`}
-                                      className='flex items-center gap-[0.75rem]'
-                                    >
-                                      <EditIcon />
-                                      <span className='text-[#1EAF34] text-[.875rem]'>Edit</span>
-                                    </NavLink>
-                                    <button
-                                      onClick={(e) => handleRoomDelete(e, building._id, room._id)}
-                                      className='flex items-center gap-[0.75rem] cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#991515]'
-                                    >
-                                      <DeleteIcon />
-                                      <span className='text-[#AF1E1E] text-[.875rem]'>Delete</span>
-                                    </button>
-                                  </div>
+                        {building.existingRoom[activeTab]?.map((room) => (
+                          <div key={room._id} className='flex flex-col gap-[1.375rem] p-[1rem] bg-[#FBF9F6] shadow-md'>
+                            <div className='flex flex-col gap-[0.4375rem]'>
+                              <div className='flex justify-between'>
+                                <span className='font-bold'>{room?.name}</span>
+                                <div className='flex gap-[2rem]'>
+                                  <button className='flex items-center gap-[0.75rem]'>
+                                    <ShowIconTwo />
+                                    <span className='text-[#110D79] text-[.875rem]'>Show</span>
+                                  </button>
+                                  <NavLink
+                                    to={`${building._id}/edit-room/${activeTab}/${room._id}`}
+                                    className='flex items-center gap-[0.75rem]'
+                                  >
+                                    <EditIcon />
+                                    <span className='text-[#1EAF34] text-[.875rem]'>Edit</span>
+                                  </NavLink>
+                                  <button
+                                    onClick={(e) => handleRoomDelete(e, building._id, room.name, room.floor)}
+                                    className='flex items-center gap-[0.75rem] cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#991515]'
+                                  >
+                                    <DeleteIcon />
+                                    <span className='text-[#AF1E1E] text-[.875rem]'>Delete</span>
+                                  </button>
                                 </div>
-                                <span className='text-[#4B5563] font-light'>Floor {room.floor}</span>
                               </div>
+                              <span className='text-[#4B5563] font-light'>Floor {room.floor}</span>
                             </div>
-                          </>
+                          </div>
                         ))}
                       </div>
                     </>

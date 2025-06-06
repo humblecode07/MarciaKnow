@@ -5,7 +5,7 @@ import AddIcon from '../../../assets/Icons/AddIcon';
 import XIcon from '../../../assets/Icons/XIcon';
 import BlackXIcon from '../../../assets/Icons/BlackXIcon';
 import CampusMap from '../../../components/TestKiosk/CampusMap';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid'
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ResetIcon from '../../../assets/Icons/ResetIcon';
@@ -14,6 +14,8 @@ import NavigationIconsModal from '../../../modals/NavigationIconsModal';
 import { pingAdmin } from '../../../api/api';
 
 const RoomDetails = () => {
+  const queryClient = useQueryClient();
+
   const { data: kiosksData, error: kiosksError, isLoading: kiosksLoading } = useQuery({
     queryKey: ['kiosks'],
     queryFn: fetchKiosks,
@@ -133,15 +135,17 @@ const RoomDetails = () => {
 
     try {
       let response = null;
-
       if (path.includes("add-room")) {
         response = await createRoom(formData, buildingID, selectedKiosk.kioskID);
         alert('Room successfully created!');
+        queryClient.invalidateQueries(['kiosks']); // 👈 refetch kiosk data
         navigate('/admin/map-editor');
       }
+
       else if (path.includes("edit-room")) {
         response = await editRoom(formData, buildingID, selectedKiosk.kioskID, roomID);
         alert('Room successfully edited!');
+        queryClient.invalidateQueries(['kiosks']); // 👈 refetch kiosk data
         navigate('/admin/map-editor');
       }
       else if (path.includes("edit-building")) {
@@ -424,7 +428,7 @@ const RoomDetails = () => {
               />
             </div>
 
-            <span className='font-bold text-[1rem]'>Floor Located</span>
+            <span className='font-bold text-[1rem]'>{isEditBuildingMode ? 'Number of Floors' : 'Floor Located'}</span>
             <div className='w-[36.25dvw] h-[2.25rem] flex items-center border-solid border-[1px] border-black'>
               <input
                 type="number"

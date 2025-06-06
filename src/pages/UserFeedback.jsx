@@ -189,11 +189,10 @@ const UserFeedback = () => {
          <div className='w-full flex flex-col gap-[1.5rem]'>
             <div className='flex justify-between items-center'>
                <div className='flex flex-col'>
-                  <span className='font-poppins font-bold text-[1.125rem]'>Feedbacks</span>
+                  <span className='font-poppins font-bold text-[1.125rem]'>Feedback Reports</span>
                   <p className='font-roboto text-[.875rem] text-[#737373]'>
-                     View user feedback and system responses for insights and improvements.
+                     View user-submitted feedback and reports to understand concerns, suggestions, and experiences.
                   </p>
-
                </div>
             </div>
 
