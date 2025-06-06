@@ -55,7 +55,7 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
          const interactionData = {
             kioskID: kiosk.kioskID,
             userMessage: currentMessage,
-            aiResponse: response.answer,
+            aiResponse: response.answer || "No response generated", // Add fallback
             detectedLocation: response.detected_location || {},
             responseTime: responseTime,
             sessionId: sessionIdRef.current
