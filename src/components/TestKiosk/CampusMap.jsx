@@ -18,7 +18,7 @@ const PANEL_TYPES = {
    BUILDING_INFO: 'buildingInfo',
    BUILDING_QR: 'buildingQR',
    ROOM_DETAIL: 'roomDetail',
-   ROOM_QR: 'roomQR',
+   ROOM_QR: 'ROOM_QR',
    FULLSCREEN_GALLERY: 'fullscreenGallery'
 };
 

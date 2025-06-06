@@ -546,7 +546,7 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          const transformedY = currentTransform.invertY(rawY);
 
          // If in add kiosk mode, show the marker
-         if (mode === import.meta.env.VITE_ADD_KIOSK) {
+         if (mode === import.meta.env.VITE_ADD_KIOSK || mode === import.meta.env.VITE_EDIT_KIOSK) {
             // Update state
             setX(transformedX);
             setY(transformedY);

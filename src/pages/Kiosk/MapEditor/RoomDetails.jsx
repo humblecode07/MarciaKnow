@@ -294,8 +294,7 @@ const RoomDetails = () => {
 
   // Handle room data fetching for edit room mode
   useEffect(() => {
-    if (isEditRoomMode && buildingID && roomID) {
-
+    if (isEditRoomMode && buildingID && roomID && selectedKiosk) {
       const getRoomData = async () => {
         try {
           const response = await fetchRoom(buildingID, roomID);
@@ -311,20 +310,50 @@ const RoomDetails = () => {
 
           const navigationGuideWithIds = response.navigationGuide.map(guide => {
             if (!guide.id) {
-
               console.log('ferrari')
-
               return { ...guide, id: uuidv4() };
             }
-
             return guide;
           });
 
           console.log(navigationGuideWithIds)
-
           setNavigationGuide([...navigationGuideWithIds]);
 
-          setCurrentPath([...response.navigationPath]);
+          // Check if navigationPath exists and has valid points
+          if (response.navigationPath &&
+            Array.isArray(response.navigationPath) &&
+            response.navigationPath.length > 0) {
+
+            // Filter out empty/invalid path points
+            const validPath = response.navigationPath.filter(point =>
+              point &&
+              typeof point === 'object' &&
+              (point.x !== undefined || point.y !== undefined) &&
+              !Object.keys(point).every(key => point[key] === undefined || point[key] === null || point[key] === '')
+            );
+
+            if (validPath.length > 0) {
+              console.log('Using existing navigation path:', validPath);
+              setCurrentPath([...validPath]);
+            } else {
+              // No valid path points, use kiosk position as starting point
+              const kioskPosition = {
+                x: selectedKiosk.x || selectedKiosk.positionX || selectedKiosk.position?.x || selectedKiosk.coordinates?.x || 0,
+                y: selectedKiosk.y || selectedKiosk.positionY || selectedKiosk.position?.y || selectedKiosk.coordinates?.y || 0
+              };
+              console.log('No valid path points, using kiosk position:', kioskPosition);
+              setCurrentPath([kioskPosition]);
+            }
+          } else {
+            // No navigationPath exists, initialize with kiosk position
+            const kioskPosition = {
+              x: selectedKiosk.x || selectedKiosk.positionX || selectedKiosk.position?.x || selectedKiosk.coordinates?.x || 0,
+              y: selectedKiosk.y || selectedKiosk.positionY || selectedKiosk.position?.y || selectedKiosk.coordinates?.y || 0
+            };
+            console.log('No navigation path found, using kiosk position:', kioskPosition);
+            setCurrentPath([kioskPosition]);
+          }
+
         } catch (error) {
           console.error('Fetch error:', error);
         }
@@ -332,9 +361,9 @@ const RoomDetails = () => {
 
       getRoomData();
     }
-  }, [isEditRoomMode, buildingID, roomID]);
+  }, [isEditRoomMode, buildingID, roomID, selectedKiosk]); // Added selectedKiosk as dependency
 
-  console.log(navigationGuide);
+  console.log(currentPath);
 
   if (kiosksLoading || navigationIconsLoading) return <div>Loading...</div>;
 

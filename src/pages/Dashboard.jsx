@@ -9,8 +9,8 @@ import {
   fetchRecentScanLogs,
   fetchRecentDestinationSearch,
   fetchRecentAdminLogs,
-  fetchKiosks, // Add this import
-  fetchAdmins  // Add this import
+  fetchKiosks, 
+  fetchAdmins 
 } from '../api/api';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -25,7 +25,6 @@ const Dashboard = () => {
   const [admins, setAdmins] = useState([]);
   const [todaySearches, setTodaySearches] = useState(0);
 
-  // Use the reports data hook for AI statistics with memoized filters
   const filters = useMemo(() => ({}), []);
   const { data: reportsData, loading: reportsLoading } = useReportsData('month', filters);
 

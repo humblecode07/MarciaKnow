@@ -15,6 +15,7 @@ const KioskDetails = () => {
    const [position, setPosition] = useState({ x: null, y: null });
 
    const handleMapClick = (x, y) => {
+      console.log(x, y)
       setPosition({ x, y });
    };
 
