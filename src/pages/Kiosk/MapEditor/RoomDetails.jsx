@@ -295,6 +295,7 @@ const RoomDetails = () => {
   // Handle room data fetching for edit room mode
   useEffect(() => {
     if (isEditRoomMode && buildingID && roomID) {
+
       const getRoomData = async () => {
         try {
           const response = await fetchRoom(buildingID, roomID);
@@ -308,7 +309,21 @@ const RoomDetails = () => {
             data: img
           })));
 
-          setNavigationGuide([...response.navigationGuide]);
+          const navigationGuideWithIds = response.navigationGuide.map(guide => {
+            if (!guide.id) {
+
+              console.log('ferrari')
+
+              return { ...guide, id: uuidv4() };
+            }
+
+            return guide;
+          });
+
+          console.log(navigationGuideWithIds)
+
+          setNavigationGuide([...navigationGuideWithIds]);
+
           setCurrentPath([...response.navigationPath]);
         } catch (error) {
           console.error('Fetch error:', error);
