@@ -43,7 +43,7 @@ const Sidebar = () => {
 
    const handleLogoutCancel = () => {
       setIsLogoutModalOpen(false);
-   }  
+   }
 
    console.log(adminID);
 
@@ -183,9 +183,17 @@ const Sidebar = () => {
                            </svg>
                         </div>
                         <span className={`font-roboto text-[.875rem] ${(isActivePath('/users') || (isActivePath(`/${adminID}`) && adminID !== admin.adminId))
-                              ? 'text-white'
-                              : 'text-black'
+                           ? 'text-white'
+                           : 'text-black'
                            }`}>Admin Users</span>
+                     </div>
+                  </NavLink>
+                  <NavLink to={'feedbacks'} className={`w-[12.3125rem] h-[3.1156rem] rounded-[1rem] flex items-center cursor-pointer select-none  ${isActivePath('/feedbacks') ? 'bg-[#dbb341]' : 'bg-white hover:bg-gray-200'}`}>
+                     <div className='w-[10.5625rem] flex items-center gap-[0.875rem] px-[.875rem]'>
+                        <div className='w-[1.875rem] h-[1.875rem] rounded-full bg-[#110d79] flex justify-center items-center'>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M2 22V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18H6zm10-7q.425 0 .713-.288T13 14t-.288-.712T12 13t-.712.288T11 14t.288.713T12 15m-1-4h2V5h-2z" /></svg>
+                        </div>
+                        <span className={`font-roboto text-[.875rem] ${isActivePath('/feedbacks') ? 'text-white' : 'text-black'}`}>Feedbacks</span>
                      </div>
                   </NavLink>
                </ul>

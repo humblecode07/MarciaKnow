@@ -73,8 +73,6 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
          }
          catch (logError) {
             console.error('Failed to log interaction:', logError);
-            // Optionally show user a non-intrusive warning
-            // but don't break the chat experience
          }
 
          // Handle location detection

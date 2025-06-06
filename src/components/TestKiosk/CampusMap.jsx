@@ -18,7 +18,7 @@ const PANEL_TYPES = {
    BUILDING_INFO: 'buildingInfo',
    BUILDING_QR: 'buildingQR',
    ROOM_DETAIL: 'roomDetail',
-   ROOM_QR: 'ROOM_QR',
+   ROOM_QR: 'roomQR',
    FULLSCREEN_GALLERY: 'fullscreenGallery'
 };
 
@@ -82,8 +82,9 @@ const CampusMap = ({
       setGalleryTitle('');
    }, []);
 
-   const handleShowQRCode = useCallback(() => {
-      setCurrentPanel(PANEL_TYPES.BUILDING_QR);
+   const handleShowQRCode = useCallback((mode) => {
+      if (mode === 'building') setCurrentPanel(PANEL_TYPES.BUILDING_QR);
+      else if (mode === 'room') setCurrentPanel(PANEL_TYPES.ROOM_QR);
    }, []);
 
    const handleShowBuildingInfo = useCallback(() => {
@@ -410,7 +411,7 @@ const CampusMap = ({
                            <span className='text-[#110D79] font-semibold text-[.875rem]'>Show Navigation</span>
                         </button>
                         <button
-                           onClick={handleShowQRCode}
+                           onClick={() => handleShowQRCode('building')}
                            className="flex-1 h-[2.375rem] flex items-center justify-center gap-[0.6875rem] border-[#F97316] border-[1px] border-solid bg-[#F9731626] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#f973161a] hover:border-[#d35e12] hover:scale-105 rounded"
                         >
                            <QRCodeIcon />
@@ -437,7 +438,7 @@ const CampusMap = ({
 
                   <div className='flex-1 flex flex-col items-center justify-center'>
                      <div className='w-[200px] h-[200px] bg-[#f0f0f0] flex items-center justify-center border border-gray-300 rounded-lg'>
-                        <QRCode value={`${import.meta.env.VITE_BASE_URL}/qr-code/${selectedBuilding?._id}/edit-room/${currentKiosk?.kioskID}`} />
+                        <QRCode value={`${import.meta.env.VITE_BASE_FRONT_URL}/qr-code/${selectedBuilding?._id}/${currentKiosk?.kioskID}`} />
                      </div>
                      <p className='mt-4 text-center text-[.875rem] text-gray-600'>
                         Scan this QR code for information about {selectedBuilding?.name}
@@ -542,10 +543,45 @@ const CampusMap = ({
                         <span className='text-[#110D79] font-semibold text-[.875rem]'>Navigate to Room</span>
                      </button>
                      <button
+                        onClick={() => handleShowQRCode('room')}
                         className="flex-1 h-[2.375rem] flex items-center justify-center gap-[0.6875rem] border-[#F97316] border-[1px] border-solid bg-[#F9731626] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#f973161a] hover:border-[#d35e12] hover:scale-105 rounded"
                      >
                         <QRCodeIcon />
                         <span className='text-[#F97316] font-semibold text-[.875rem]'>Generate QR Code</span>
+                     </button>
+                  </div>
+               </div>
+            </>
+         )}
+         {shouldShowBuildingPanels && currentPanel === PANEL_TYPES.ROOM_QR && (
+            <>
+               <div className='absolute inset-0 bg-black opacity-40 z-10'></div>
+               <div className="w-[28.8125rem] h-[25.5rem] flex flex-col gap-[1.3125rem] absolute z-20 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg p-6 overflow-auto rounded-lg">
+                  <div className='flex justify-between items-center'>
+                     <h3 className='text-[1.25rem] font-semibold'>QR Code for {selectedRoom?.name}</h3>
+                     <div
+                        onClick={() => setCurrentPanel(PANEL_TYPES.BUILDING_INFO)}
+                        className='w-[1.75rem] h-[1.75rem] flex justify-center items-center bg-[#f0f0f0] rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#e0e0e0]'
+                     >
+                        <XIcon />
+                     </div>
+                  </div>
+
+                  <div className='flex-1 flex flex-col items-center justify-center'>
+                     <div className='w-[200px] h-[200px] bg-[#f0f0f0] flex items-center justify-center border border-gray-300 rounded-lg'>
+                        <QRCode value={`${import.meta.env.VITE_BASE_FRONT_URL}/qr-code/${selectedBuilding?._id}/${currentKiosk?.kioskID}/${selectedRoom._id}`} />
+                     </div>
+                     <p className='mt-4 text-center text-[.875rem] text-gray-600'>
+                        Scan this QR code for information about {selectedRoom?.name}
+                     </p>
+                  </div>
+
+                  <div className='flex justify-center gap-4'>
+                     <button
+                        onClick={() => setCurrentPanel(PANEL_TYPES.ROOM_DETAIL)}
+                        className="w-[12.25rem] h-[2.375rem] flex items-center justify-center border-[#110D79] border-[1px] border-solid bg-[#D1D6FA] cursor-pointer transition-all duration-300 ease-in-out hover:bg-[#bfc4f5] rounded"
+                     >
+                        <span className='text-[#110D79] font-semibold text-[.875rem]'>Back to Info</span>
                      </button>
                   </div>
                </div>

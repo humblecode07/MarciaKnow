@@ -18,6 +18,10 @@ const ScanGuide = () => {
    const [showSidebar, setShowSidebar] = useState(false);
    const [scanLogged, setScanLogged] = useState(false);
 
+   const guideData = roomID
+      ? room?.navigationGuide
+      : building?.navigationGuide?.[kioskID];
+
    useEffect(() => {
       const logScan = async () => {
          if (buildingID && kioskID && !scanLogged && building?.name) { // Added building?.name check
@@ -39,46 +43,46 @@ const ScanGuide = () => {
    }, [buildingID, kioskID, building, scanLogged]);
 
    useEffect(() => {
-      if (roomID) {
-         const fetchRoomData = async () => {
-            try {
-               const response = await fetchRoom(buildingID, roomID);
-
-               setRoom(response);
-               setCurrentPath(response.navigationPath)
-            }
-            catch (error) {
-               console.error(error);
-            }
-         }
-
-         fetchRoomData();
-      }
-      const fetchBuildingData = async () => {
-         try {
-            const response = await fetchBuilding(buildingID);
-            setBuilding(response);
-            setCurrentPath(response.navigationPath[kioskID])
-         }
-         catch (error) {
-            console.error(error);
-         }
-      }
-
       const fetchKioskData = async () => {
          try {
             const response = await fetchKiosk(kioskID);
             setKiosk(response);
+         } catch (error) {
+            console.error("Failed to fetch kiosk:", error);
          }
-         catch (error) {
-            console.error(error);
+      };
+
+      const fetchBuildingData = async () => {
+         try {
+            const response = await fetchBuilding(buildingID);
+            setBuilding(response);
+            if (!roomID) {
+               setCurrentPath(response.navigationPath[kioskID]);
+            }
+         } catch (error) {
+            console.error("Failed to fetch building:", error);
          }
+      };
+
+      const fetchRoomData = async () => {
+         try {
+            const response = await fetchRoom(buildingID, roomID);
+            setRoom(response);
+            setCurrentPath(response.navigationPath); // assuming the room has a `navigationPath` property
+         } catch (error) {
+            console.error("Failed to fetch room:", error);
+         }
+      };
+
+      fetchKioskData();
+      fetchBuildingData();
+
+      if (roomID) {
+         fetchRoomData();
       }
 
-      fetchBuildingData();
-      fetchKioskData();
+   }, [buildingID, roomID, kioskID]);
 
-   }, [buildingID, roomID, kioskID])
 
    console.log(building);
 
@@ -173,8 +177,8 @@ const ScanGuide = () => {
             <div className='flex-1 flex flex-col font-righteous px-4 mt-6 overflow-y-auto'>
                <span className='text-lg mb-4'>Navigation Guide:</span>
                <div className='flex flex-col gap-4 flex-1'>
-                  {building?.navigationGuide?.[kioskID]?.length > 0 ? (
-                     building.navigationGuide[kioskID].map((path, index) => (
+                  {guideData?.length > 0 ? (
+                     guideData.map((path, index) => (
                         <div
                            className='flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-100'
                            key={path.id || `path-${index}`}

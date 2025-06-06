@@ -22,6 +22,7 @@ import PersistLogin from "./pages/PersistLogin"
 import RequireAuth from "./components/RequireAuth"
 import Settings from "./pages/Settings"
 import useOnlineStatus from "./hooks/useOnlineStatus"
+import UserFeedback from "./pages/UserFeedback"
 
 const superAdminRole = Number(import.meta.env.VITE_ROLE_SUPER_ADMIN);
 const adminRole = Number(import.meta.env.VITE_ROLE_ADMIN);
@@ -40,11 +41,11 @@ const router = createBrowserRouter([
       element: <Login />
    },
    {
-      path: 'qr-code/:buildingID/edit-room/:kioskID/:roomID',
+      path: 'qr-code/:buildingID/:kioskID/:roomID',
       element: <ScanGuide />
    },
    {
-      path: 'qr-code/:buildingID/edit-room/:kioskID',
+      path: 'qr-code/:buildingID/:kioskID',
       element: <ScanGuide />
    },
    {
@@ -98,6 +99,10 @@ const router = createBrowserRouter([
                {
                   path: 'reports',
                   element: <Reports />
+               },
+               {
+                  path: 'feedbacks',
+                  element: <UserFeedback />
                },
                {
                   path: 'users',
