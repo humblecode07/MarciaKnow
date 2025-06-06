@@ -6,11 +6,22 @@ import yangaLogo from '../../../public/Photos/yangaLogo.png'
 import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { fetchBuildings, fetchBuildingsFromSpecificKiosk, fetchRooms, fetchRoomsFromKiosk } from "../../api/api"
-import { logDestinationSearch } from "../../api/api" // Import your logging function
+import { logDestinationSearch } from "../../api/api"
 import FeedbackModal from "../../modals/FeedbackModal"
+import NeedHelpModal from "../../modals/NeedHelpModal" // Import the NeedHelpModal
 import RoomIcon from "../../assets/Icons/RoomIcon"
 
-const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, setCurrentPath, width, height }) => {
+const LeftSidePanel = ({
+   room,
+   building,
+   onRoomSelect,
+   onBuildingSelect,
+   kiosk,
+   setCurrentPath,
+   width,
+   height,
+   onTriggerAI // Add this prop to handle AI assistant trigger
+}) => {
    const { data: buildings, error: buildingsError, isLoading: buildingsLoading } = useQuery({
       queryKey: ['buildings', kiosk?.kioskID],
       queryFn: () => fetchBuildingsFromSpecificKiosk(kiosk?.kioskID)
@@ -23,10 +34,8 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
 
    const [search, setSearch] = useState('');
    const [showResults, setShowResults] = useState(false);
-   // Add state for feedback modal
    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-
-   console.log(kiosk?.kioskID)
+   const [showHelp, setShowHelp] = useState(false); // This will now control NeedHelpModal
 
    // Filter buildings and rooms based on search input
    const filteredResults = useMemo(() => {
@@ -86,12 +95,10 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
          console.log('Destination search logged successfully:', logData);
       } catch (error) {
          console.error('Failed to log destination search:', error);
-         // Don't block the user experience if logging fails
       }
    };
 
    const handleResultClick = async (item, type) => {
-      // Log the destination search/selection
       await logDestinationActivity(item, type, search);
 
       if (type === 'building') {
@@ -119,7 +126,6 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
          case 'library':
             searchQuery = 'library';
             destinationType = 'room';
-            // Try to find actual library item for better logging
             mockItem = rooms?.find(room =>
                room.name?.toLowerCase().includes('library')
             ) || { name: 'Library', _id: null, buildingId: null };
@@ -127,7 +133,6 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
          case 'sofia':
             searchQuery = 'sofia building 2';
             destinationType = 'building';
-            // Try to find actual Sofia Building 2 for better logging
             mockItem = buildings?.find(building =>
                building.name?.toLowerCase().includes('sofia') &&
                building.name?.toLowerCase().includes('2')
@@ -136,14 +141,12 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
          case 'cashier':
             searchQuery = 'cashier';
             destinationType = 'room';
-            // Try to find actual cashier room for better logging
             mockItem = rooms?.find(room =>
                room.name?.toLowerCase().includes('cashier')
             ) || { name: 'Cashier', _id: null, buildingId: null };
             break;
       }
 
-      // Log the quick suggestion click
       if (mockItem) {
          await logDestinationActivity(mockItem, destinationType, searchQuery, true);
       }
@@ -152,14 +155,21 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
       setShowResults(true);
    };
 
-   // Function to handle feedback button click
    const handleFeedbackClick = () => {
       setIsFeedbackModalOpen(true);
    };
 
-   // Function to close feedback modal
    const handleCloseFeedbackModal = () => {
       setIsFeedbackModalOpen(false);
+   };
+
+   // Handle AI assistant trigger from NeedHelpModal
+   const handleAITrigger = () => {
+      console.log('AI Assistant triggered from Help Modal');
+      // Call the parent component's AI trigger function if provided
+      if (onTriggerAI) {
+         onTriggerAI();
+      }
    };
 
    console.log(rooms);
@@ -403,7 +413,6 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
                )}
             </div>
 
-            {/* Click outside to close search results */}
             {showResults && (
                <div
                   className='fixed inset-0 z-[5]'
@@ -413,7 +422,10 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
 
             <div className='absolute bottom-0 flex flex-col font-righteous text-[.875rem]'>
                <div className='w-[18.75rem] flex'>
-                  <button className='w-[9.375rem] h-[3.5rem] bg-[#4329D8] flex justify-center items-center border-solid border-[1px] border-black text-white'>
+                  <button
+                     className='w-[9.375rem] h-[3.5rem] bg-[#4329D8] flex justify-center items-center border-solid border-[1px] border-black text-white hover:bg-[#3422B8] transition-colors'
+                     onClick={() => setShowHelp(true)}
+                  >
                      Need Help?
                   </button>
                   <button
@@ -437,10 +449,18 @@ const LeftSidePanel = ({ room, building, onRoomSelect, onBuildingSelect, kiosk, 
                </div>
             </div>
          </section>
+
          <FeedbackModal
             isOpen={isFeedbackModalOpen}
             onClose={handleCloseFeedbackModal}
             kiosk={kiosk}
+         />
+
+         {/* Replace the old help modal with NeedHelpModal */}
+         <NeedHelpModal
+            showHelp={showHelp}
+            setShowHelp={setShowHelp}
+            onTriggerAI={handleAITrigger}
          />
       </>
    )

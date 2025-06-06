@@ -16,6 +16,7 @@ import {
 
 import { useState, useEffect, useMemo } from 'react';
 import { useReportsData } from '../hooks/useReportsData';
+import PopularDestinationsGraph from '../components/PopularDestinationGraph';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -229,17 +230,19 @@ const Dashboard = () => {
       timestamp: search.timestamp ? new Date(search.timestamp) : null
     }));
 
-    const adminEntries = recentAdminLogs.map(log => ({
-      ...log,
-      type: 'Admin',
-      timestamp: getLatestActivityTime(log)  // uses your helper function
-    }));
+    // const adminEntries = recentAdminLogs.map(log => ({
+    //   ...log,
+    //   type: 'Admin',
+    //   timestamp: getLatestActivityTime(log)  // uses your helper function
+    // }));
 
-    return [...scanEntries, ...searchEntries, ...adminEntries]
+    // console.log(adminEntries);
+
+    return [...scanEntries, ...searchEntries]
       .filter(log => log.timestamp) // remove any with null timestamps
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 10);
-  }, [recentScans, recentSearches, recentAdminLogs]);
+  }, [recentScans, recentSearches]);
 
   console.log(combinedLogs);
 
@@ -416,8 +419,14 @@ const Dashboard = () => {
       </div>
 
       <div className='flex flex-col gap-[1rem] pt-[3.125rem]'>
-        <h2 className='font-poppins font-bold text-[1.125rem] text-center'>CAMPUS MAP PREVIEW</h2>
-        <CampusMap width={'25.375rem'} height={'21rem'} />
+        <div className='w-[] flex flex-col gap-[.875rem]'>
+          <h2 className='font-poppins font-bold text-[1.125rem] text-center'>CAMPUS MAP PREVIEW</h2>
+          <CampusMap width={'25.375rem'} height={'21rem'} />
+        </div>
+        <PopularDestinationsGraph
+          data={reportsData}
+          loading={reportsLoading}
+        />
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'
-import { fetchAdmin } from '../api/api';
+import React, { useEffect, useState } from 'react';
+import { fetchAdmin, pingAdmin } from '../api/api';
 import { NavLink, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
@@ -7,10 +7,8 @@ import useAuth from '../hooks/useAuth';
 import CoggersIcon from '../assets/Icons/CoggersIcon';
 import ClockIcon from '../assets/Icons/ClockIcon';
 import CalendarIcon from '../assets/Icons/CalendarIcon';
-import { useState } from 'react';
 import ShowIconTwo from '../assets/Icons/ShowIconTwo';
 import CallIcon from '../assets/Icons/CallIcon';
-import { pingAdmin } from '../api/api';
 
 const Profile = () => {
   const { admin } = useAuth();
@@ -26,7 +24,7 @@ const Profile = () => {
     { id: 'editor', label: 'MAP EDITOR' }
   ];
 
-  // Helper function to get action color
+  // Helper function to get action color (no change needed here)
   const getActionColor = (action) => {
     switch (action?.toLowerCase()) {
       case 'added':
@@ -131,28 +129,31 @@ const Profile = () => {
             {activeTab === 'tabs' && (
               adminData?.systemLogs?.kiosk?.length > 0 ? (
                 <div className='flex flex-col gap-4'>
-                  {adminData.systemLogs.kiosk.map((log, index) => (
-                    <div key={index} className='w-[33.5rem] py-[1.5625rem] px-[1.6875rem] bg-[#FBF9F6] shadow-md'>
-                      <div className='flex justify-between gap-8'>
-                        <div className='flex flex-col gap-[.5rem] text-[.875rem]'>
-                          <span className='font-roboto font-medium'>{log.description}</span>
-                          <span className='font-roboto font-light text-[#4B5563]'>
-                            <span className='font-bold'>ID: </span>{log.kioskID}
-                          </span>
-                          <span className='font-roboto font-light text-[#4B5563]'>
-                            <span className='font-bold'>Location: </span>{log.location}
-                          </span>
-                          <span className='font-roboto font-light text-[#4B5563]'>
-                            {new Date(log.dateOfChange).toLocaleString()}
-                          </span>
+                  {/* Sorting added here: sort by dateOfChange in descending order */}
+                  {adminData.systemLogs.kiosk
+                    .sort((a, b) => new Date(b.dateOfChange) - new Date(a.dateOfChange))
+                    .map((log, index) => (
+                      <div key={index} className='w-[33.5rem] py-[1.5625rem] px-[1.6875rem] bg-[#FBF9F6] shadow-md'>
+                        <div className='flex justify-between gap-8'>
+                          <div className='flex flex-col gap-[.5rem] text-[.875rem]'>
+                            <span className='font-roboto font-medium'>{log.description}</span>
+                            <span className='font-roboto font-light text-[#4B5563]'>
+                              <span className='font-bold'>ID: </span>{log.kioskID}
+                            </span>
+                            <span className='font-roboto font-light text-[#4B5563]'>
+                              <span className='font-bold'>Location: </span>{log.location}
+                            </span>
+                            <span className='font-roboto font-light text-[#4B5563]'>
+                              {new Date(log.dateOfChange).toLocaleString()}
+                            </span>
+                          </div>
+                          <button className='h-[1.8125rem] px-[.875rem] bg-[#D1D6FA] text-[#110D79] text-[.875rem] flex gap-[0.8125rem] items-center justify-center'>
+                            <ShowIconTwo />
+                            <span>View</span>
+                          </button>
                         </div>
-                        <button className='h-[1.8125rem] px-[.875rem] bg-[#D1D6FA] text-[#110D79] text-[.875rem] flex gap-[0.8125rem] items-center justify-center'>
-                          <ShowIconTwo />
-                          <span>View</span>
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               ) : (
                 <p className='text-gray-500'>No kiosk logs available.</p>
@@ -160,12 +161,12 @@ const Profile = () => {
             )}
             {activeTab === 'editor' && (
               (adminData?.systemLogs?.mapEditor?.room?.length > 0 || adminData?.systemLogs?.mapEditor?.building?.length > 0) ? (
-                <div className='flex flex-col gap-4 w-full py-2'> {/* Added px-2 for padding */}
+                <div className='flex flex-col gap-4 w-full py-2'>
                   {[...adminData.systemLogs.mapEditor.room, ...adminData.systemLogs.mapEditor.building]
                     .sort((a, b) => new Date(b.dateOfChange) - new Date(a.dateOfChange))
                     .map((log, index) => {
                       return (
-                        <div key={index} className='w-[33.5rem] py-[1.5625rem] px-[1.6875rem] bg-[#FBF9F6] shadow-md rounded'> {/* Changed w-full to w-[33.5rem] and added rounded */}
+                        <div key={index} className='w-[33.5rem] py-[1.5625rem] px-[1.6875rem] bg-[#FBF9F6] shadow-md rounded'>
                           <div className='flex justify-between gap-4'>
                             <div className='flex flex-col gap-[.5rem] text-[.875rem] flex-1'>
                               <span className='font-roboto font-medium text-black'>{log.description}</span>
@@ -233,4 +234,4 @@ const Profile = () => {
   )
 }
 
-export default Profile
+export default Profile;
