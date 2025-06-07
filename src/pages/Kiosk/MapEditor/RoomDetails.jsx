@@ -458,7 +458,7 @@ const RoomDetails = () => {
       <div className="flex flex-col gap-[0.1875rem]">
         <h1 className="font-poppins font-bold text-[1.125rem]">
           {isEditRoomMode
-            ? `EDIT ${roomName.toUpperCase()} FROM ${buildingName.toUpperCase()}`
+            ? `EDIT ${roomName.toUpperCase()}}`
             : isEditBuildingMode
               ? `EDIT ${buildingName.toUpperCase()}`
               : `ADD ROOM FOR ${buildingName.toUpperCase()}`}
