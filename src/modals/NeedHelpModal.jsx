@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, MapPin, MessageCircle, Phone, Mail, Clock, ChevronRight, ChevronDown, X } from 'lucide-react';
 
-const NeedHelpModal = ({ showHelp, setShowHelp, onTriggerAI }) => {
+const NeedHelpModal = ({ showHelp, setShowHelp, onTriggerAI, type }) => {
    const [expandedSection, setExpandedSection] = useState(null);
    const [selectedCategory, setSelectedCategory] = useState('search');
 
@@ -125,8 +125,8 @@ const NeedHelpModal = ({ showHelp, setShowHelp, onTriggerAI }) => {
                         key={key}
                         onClick={() => handleCategoryChange(key)}
                         className={`w-full text-left p-4 border-b flex items-center gap-3 transition-colors ${selectedCategory === key
-                              ? 'bg-[#110D79] text-white'
-                              : 'hover:bg-gray-100'
+                           ? 'bg-[#110D79] text-white'
+                           : 'hover:bg-gray-100'
                            }`}
                      >
                         {category.icon}
@@ -170,20 +170,22 @@ const NeedHelpModal = ({ showHelp, setShowHelp, onTriggerAI }) => {
                   </div>
                </div>
             </div>
-            <div className='bg-gray-50 p-4 border-t'>
-               <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-2 text-sm text-gray-600'>
-                     <Clock className="w-4 h-4" />
-                     <span>Still need help?</span>
+            {type !== 'qrcode' ?
+               <div className='bg-gray-50 p-4 border-t'>
+                  <div className='flex items-center justify-between'>
+                     <div className='flex items-center gap-2 text-sm text-gray-600'>
+                        <Clock className="w-4 h-4" />
+                        <span>Still need help?</span>
+                     </div>
+                     <button
+                        onClick={handleAIHelp}
+                        className='bg-[#DBB341] hover:bg-[#c9a32e] text-white px-6 py-2 font-medium transition-colors'
+                     >
+                        Ask MarciaBot 🤖
+                     </button>
                   </div>
-                  <button
-                     onClick={handleAIHelp}
-                     className='bg-[#DBB341] hover:bg-[#c9a32e] text-white px-6 py-2 font-medium transition-colors'
-                  >
-                     Ask MarciaBot 🤖
-                  </button>
                </div>
-            </div>
+               : null}
          </div>
       </div>
    );

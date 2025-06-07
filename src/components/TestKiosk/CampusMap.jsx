@@ -92,9 +92,93 @@ const CampusMap = ({
    }, []);
 
    const handleKioskChange = useCallback((e) => {
-      const selected = kiosksData?.find(k => k.kioskID === e.target.value);
-      setKiosk(selected);
-   }, [kiosksData, setKiosk]);
+      const newKioskId = e.target.value;
+      const newKiosk = kiosksData?.find(k => k.kioskID === newKioskId);
+
+      if (!newKiosk) return;
+
+      // Store current navigation state before switching
+      const currentNavigationState = {
+         selectedRoom,
+         selectedBuilding,
+         currentPanel
+      };
+
+      // Update the kiosk
+      setKiosk(newKiosk);
+
+      // If we have an active room navigation, update it for the new kiosk
+      if (selectedRoom && selectedBuilding) {
+         updateRoomNavigationForNewKiosk(newKiosk, selectedRoom, selectedBuilding);
+      }
+      // If we have an active building navigation, update it for the new kiosk
+      else if (selectedBuilding && currentPanel === PANEL_TYPES.BUILDING_OVERVIEW) {
+         updateBuildingNavigationForNewKiosk(newKiosk, selectedBuilding);
+      }
+   }, [kiosksData, setKiosk, selectedRoom, selectedBuilding, currentPanel]);
+
+   const updateRoomNavigationForNewKiosk = useCallback((newKiosk, room, building) => {
+      const roomsForNewKiosk = building.existingRoom?.[newKiosk.kioskID];
+
+      if (!roomsForNewKiosk) {
+         console.log(`No rooms available for kiosk ${newKiosk.kioskID} in building ${building.name}`);
+         // Clear navigation if room doesn't exist for this kiosk
+         setCurrentPath(null);
+         return;
+      }
+
+      // Find the same room in the new kiosk's data
+      const updatedRoomData = roomsForNewKiosk.find(r => r._id === room._id);
+
+      if (updatedRoomData) {
+         // Room exists for new kiosk, update navigation
+         const roomWithBuilding = {
+            ...updatedRoomData,
+            building: building.name
+         };
+
+         setSelectedRoom(roomWithBuilding);
+
+         // Update navigation path if it exists
+         if (updatedRoomData.navigationPath && updatedRoomData.navigationPath.length > 0) {
+            console.log(`✅ Updated room navigation for kiosk ${newKiosk.kioskID}:`, updatedRoomData.navigationPath);
+            setCurrentPath([...updatedRoomData.navigationPath]);
+            setRoom(roomWithBuilding); // Update parent state
+         } else {
+            // No navigation path for this kiosk, use kiosk position as starting point
+            const kioskPosition = getKioskPosition(newKiosk);
+            console.log(`⚠ No navigation path for room from kiosk ${newKiosk.kioskID}, using kiosk position`);
+            setCurrentPath([kioskPosition]);
+         }
+      } else {
+         console.log(`Room ${room.name} not available from kiosk ${newKiosk.kioskID}`);
+         // Room doesn't exist for this kiosk, clear navigation
+         setCurrentPath(null);
+         // Optionally, you could show a message to the user or redirect to building overview
+      }
+   }, [setSelectedRoom, setCurrentPath, setRoom]);
+
+   const updateBuildingNavigationForNewKiosk = useCallback((newKiosk, building) => {
+      if (building.navigationPath && building.navigationPath[newKiosk.kioskID]) {
+         const newPath = building.navigationPath[newKiosk.kioskID];
+         console.log(`✅ Updated building navigation for kiosk ${newKiosk.kioskID}:`, newPath);
+         setCurrentPath([...newPath]);
+         setBuilding(building); // Update parent state
+      } else {
+         // No navigation path for this kiosk to the building
+         console.log(`⚠ No navigation path to building ${building.name} from kiosk ${newKiosk.kioskID}`);
+         const kioskPosition = getKioskPosition(newKiosk);
+         setCurrentPath([kioskPosition]);
+      }
+   }, [setCurrentPath, setBuilding]);
+
+   // Utility function to extract kiosk position consistently
+   const getKioskPosition = useCallback((kiosk) => {
+      return {
+         x: kiosk.x || kiosk.positionX || kiosk.position?.x || kiosk.coordinates?.x || 0,
+         y: kiosk.y || kiosk.positionY || kiosk.position?.y || kiosk.coordinates?.y || 0
+      };
+   }, []);
 
    const handleRoomClick = useCallback((room) => {
       // Prevent room selection when building info panel is open
@@ -123,20 +207,34 @@ const CampusMap = ({
 
    // Navigation handlers
    const handleRoomNavigation = useCallback(() => {
-      if (selectedRoom?.navigationPath) {
-         setCurrentPath(selectedRoom.navigationPath);
-         setRoom(selectedRoom);
+      if (!selectedRoom?.navigationPath || !currentKiosk) return;
+
+      // Ensure we're using the most up-to-date navigation path for current kiosk
+      const roomsForCurrentKiosk = selectedBuilding?.existingRoom?.[currentKiosk.kioskID];
+      const currentRoomData = roomsForCurrentKiosk?.find(room => room._id === selectedRoom._id);
+
+      if (currentRoomData?.navigationPath) {
+         console.log('🚀 Starting room navigation from current kiosk:', currentKiosk.kioskID);
+         setCurrentPath([...currentRoomData.navigationPath]);
+         setRoom({ ...currentRoomData, building: selectedBuilding.name });
          closeAllPanels();
+      } else {
+         console.log('⚠ No navigation path available for this room from current kiosk');
+         // Optionally show a message to user
       }
-   }, [selectedRoom, setCurrentPath, setRoom, closeAllPanels]);
+   }, [selectedRoom, currentKiosk, selectedBuilding, setCurrentPath, setRoom, closeAllPanels]);
 
    const handleBuildingNavigation = useCallback(() => {
-      if (selectedBuilding?.navigationPath?.[currentKiosk?.kioskID]) {
-         const newPath = selectedBuilding.navigationPath[currentKiosk.kioskID];
-         setCurrentPath(newPath);
-         setBuilding(selectedBuilding);
-         closeAllPanels();
+      if (!selectedBuilding?.navigationPath?.[currentKiosk?.kioskID]) {
+         console.log('⚠ No navigation path available to this building from current kiosk');
+         return;
       }
+
+      const newPath = selectedBuilding.navigationPath[currentKiosk.kioskID];
+      console.log('🚀 Starting building navigation from current kiosk:', currentKiosk.kioskID);
+      setCurrentPath([...newPath]);
+      setBuilding(selectedBuilding);
+      closeAllPanels();
    }, [selectedBuilding, currentKiosk, setCurrentPath, setBuilding, closeAllPanels]);
 
    const searchParams = new URLSearchParams(location.search);
@@ -228,36 +326,38 @@ const CampusMap = ({
 
    // Update room data when kiosk changes
    useEffect(() => {
-      if (selectedRoom && selectedBuilding && currentKiosk) {
-         const updatedRoomData = selectedBuilding.existingRoom?.[currentKiosk.kioskID]?.find(
-            (room) => room._id === selectedRoom._id
-         );
+      if (!selectedRoom || !selectedBuilding || !currentKiosk) return;
 
-         if (updatedRoomData && updatedRoomData.navigationPath &&
-            selectedRoom.navigationPath !== updatedRoomData.navigationPath) {
-            setSelectedRoom({
-               ...updatedRoomData,
-               building: selectedBuilding.name
-            });
-            setCurrentPath(updatedRoomData.navigationPath);
-         } else if (!updatedRoomData?.navigationPath && currentPath) {
-            setCurrentPath(null);
+      // Get the updated room data for the current kiosk
+      const roomsForCurrentKiosk = selectedBuilding.existingRoom?.[currentKiosk.kioskID];
+      const updatedRoomData = roomsForCurrentKiosk?.find(room => room._id === selectedRoom._id);
+
+      if (updatedRoomData) {
+         // Room exists for current kiosk
+         const roomWithBuilding = {
+            ...updatedRoomData,
+            building: selectedBuilding.name
+         };
+
+         // Only update if the navigation path has actually changed
+         const currentNavPath = JSON.stringify(selectedRoom.navigationPath || []);
+         const newNavPath = JSON.stringify(updatedRoomData.navigationPath || []);
+
+         if (currentNavPath !== newNavPath) {
+            console.log('🔄 Room navigation path changed for new kiosk');
+            setSelectedRoom(roomWithBuilding);
+
+            // Don't update currentPath here - let the parent component handle it
+            // The parent component will handle the path update through its own useEffect
          }
+      } else {
+         // Room doesn't exist for current kiosk
+         console.log(`❌ Room ${selectedRoom.name} not available from kiosk ${currentKiosk.kioskID}`);
+         // Clear the selected room since it doesn't exist for this kiosk
+         setSelectedRoom(null);
+         setCurrentPanel(PANEL_TYPES.NONE);
       }
-   }, [currentKiosk, selectedRoom, selectedBuilding, currentPath, setCurrentPath]);
-
-   // Initialize navigation path
-   useEffect(() => {
-      if (buildings.length > 0 && currentKiosk && selectedRoom && selectedBuilding && !currentPath) {
-         const roomData = selectedBuilding.existingRoom?.[currentKiosk.kioskID]?.find(
-            (room) => room._id === selectedRoom._id
-         );
-
-         if (roomData?.navigationPath) {
-            setCurrentPath(roomData.navigationPath);
-         }
-      }
-   }, [buildings, currentKiosk, selectedRoom, selectedBuilding, currentPath, setCurrentPath]);
+   }, [currentKiosk?.kioskID, selectedRoom?._id, selectedBuilding?._id]);
 
    console.log(coordinates);
 
@@ -297,6 +397,10 @@ const CampusMap = ({
       window.addEventListener('keydown', handleKeyPress);
       return () => window.removeEventListener('keydown', handleKeyPress);
    }, [currentPanel, navigateGallery]);
+
+
+
+   console.log(currentKiosk);
 
    // Helper function to get image URL
    const getImageUrl = useCallback((imagePath) => {
@@ -434,7 +538,7 @@ const CampusMap = ({
                               No. of Floors: <span className='text-black font-semibold'>{selectedBuilding?.numOfFloors}</span>
                            </span>
                         </div>
-                        <p className='max-h-[5.25rem] overflow-auto text-[.875rem] text-gray-700'>
+                        <p className='max-h-[5.25rem] overflow-auto text-[.875rem] text-gray-700 whitespace-pre-wrap'>
                            {selectedBuilding?.description || 'No description available.'}
                         </p>
                      </div>
@@ -599,7 +703,7 @@ const CampusMap = ({
                      <p className='text-[#505050] text-sm mb-2'>
                         Located at: <span className='text-black font-semibold'>Floor {selectedRoom.floor}</span>
                      </p>
-                     <p className='text-[.875rem] text-gray-700'>{selectedRoom.description || 'No description available.'}</p>
+                     <p className='text-[.875rem] text-gray-700 whitespace-pre-wrap'>{selectedRoom.description || 'No description available.'}</p>
                   </div>
 
                   <div className='flex justify-center mt-4 gap-4'>

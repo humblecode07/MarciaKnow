@@ -7,8 +7,10 @@ import LibraryIcon from '../assets/Icons/LibraryIcon';
 import BuildingIcon from '../assets/Icons/BuildingIcon';
 import RegisterIcon from '../assets/Icons/RegisterIcon';
 import yangaLogo from '../../public/Photos/yangaLogo.png'
+import FeedbackModal from '../modals/FeedbackModal';
+import NeedHelpModal from '../modals/NeedHelpModal';
 
-const ScanGuide = () => {
+const ScanGuide = ({ handleAITrigger }) => {
    const { buildingID, kioskID, roomID } = useParams();
 
    const [currentPath, setCurrentPath] = useState([]);
@@ -18,9 +20,20 @@ const ScanGuide = () => {
    const [showSidebar, setShowSidebar] = useState(false);
    const [scanLogged, setScanLogged] = useState(false);
 
+   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+   const [showHelp, setShowHelp] = useState(false); // This will now control NeedHelpModal
+
    const guideData = roomID
       ? room?.navigationGuide
       : building?.navigationGuide?.[kioskID];
+
+   const handleFeedbackClick = () => {
+      setIsFeedbackModalOpen(true);
+   };
+
+   const handleCloseFeedbackModal = () => {
+      setIsFeedbackModalOpen(false);
+   };
 
    useEffect(() => {
       const logScan = async () => {
@@ -111,10 +124,10 @@ const ScanGuide = () => {
             </div>
 
             {/* Mobile Status Bar */}
-            <div className='mt-3 flex items-center justify-between bg-[#DBB341] px-4 py-2 rounded-lg text-white text-sm'>
+            <div className='mt-3 flex items-center justify-between bg-[#DBB341] px-4 py-2  text-white text-sm'>
                <div className='flex gap-2 items-center'>
                   <span className='font-medium'>{kiosk?.name || 'Loading...'}</span>
-                  <span className={`font-semibold text-xs px-2 py-1 rounded ${kiosk?.status === 'online' ? 'bg-[#1EAF34]' : 'bg-red-500'}`}>
+                  <span className={`font-semibold text-xs px-2 py-1 ${kiosk?.status === 'online' ? 'bg-[#1EAF34]' : 'bg-red-500'}`}>
                      {kiosk?.status ? kiosk.status.charAt(0).toUpperCase() + kiosk.status.slice(1) : 'Unknown'}
                   </span>
                </div>
@@ -180,10 +193,10 @@ const ScanGuide = () => {
                   {guideData?.length > 0 ? (
                      guideData.map((path, index) => (
                         <div
-                           className='flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-100'
+                           className='flex items-start gap-4 p-3 hover:bg-gray-50 transition-colors duration-200 border border-gray-100'
                            key={path.id || `path-${index}`}
                         >
-                           <div className='w-10 h-10 border border-black rounded-md flex items-center justify-center flex-shrink-0 bg-white'>
+                           <div className='w-10 h-10 border border-black flex items-center justify-center flex-shrink-0 bg-white'>
                               <img
                                  src={path.icon}
                                  alt={path.iconAlt || `Navigation step ${index + 1}`}
@@ -204,7 +217,7 @@ const ScanGuide = () => {
                      ))
                   ) : (
                      <div className='flex flex-col items-center justify-center py-8 text-center'>
-                        <div className='w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3'>
+                        <div className='w-12 h-12 bg-gray-100 flex items-center justify-center mb-3'>
                            <span className='text-gray-400 text-xl'>🗺️</span>
                         </div>
                         <p className='text-gray-500 font-medium mb-1'>No navigation available</p>
@@ -220,11 +233,17 @@ const ScanGuide = () => {
             <div className='mt-auto'>
                {/* Help Buttons */}
                <div className='flex flex-col sm:flex-row font-righteous text-sm'>
-                  <button className='flex-1 h-12 lg:h-14 bg-[#4329D8] flex justify-center items-center border border-black text-white hover:bg-[#3620b8] transition-colors'>
+                  <button
+                     className='flex-1 h-12 lg:h-14 bg-[#4329D8] flex justify-center items-center border border-black text-white hover:bg-[#3620b8] transition-colors'
+                     onClick={() => setShowHelp(true)}
+                  >
                      Need Help?
                   </button>
-                  <button className='flex-1 h-12 lg:h-14 bg-[#4329D8] flex justify-center items-center border border-black text-white hover:bg-[#3620b8] transition-colors'>
-                     Reports & Feedback
+                  <button
+                     className='flex-1 h-12 lg:h-14 bg-[#4329D8] flex justify-center items-center border border-black text-white hover:bg-[#3620b8] transition-colors'
+                     onClick={handleFeedbackClick}
+                  >
+                     Any reports or feedback?
                   </button>
                </div>
 
@@ -258,7 +277,7 @@ const ScanGuide = () => {
             <div className='lg:hidden bg-white shadow-sm p-3 border-b'>
                <button
                   onClick={() => setShowSidebar(true)}
-                  className='w-full py-2 px-4 bg-[#4329D8] text-white rounded-lg font-medium hover:bg-[#3620b8] transition-colors'
+                  className='w-full py-2 px-4 bg-[#4329D8] text-white font-medium hover:bg-[#3620b8] transition-colors'
                >
                   View Navigation Guide
                </button>
@@ -277,6 +296,17 @@ const ScanGuide = () => {
                </div>
             </div>
          </div>
+         <FeedbackModal
+            isOpen={isFeedbackModalOpen}
+            onClose={handleCloseFeedbackModal}
+            kiosk={kiosk}
+         />
+         <NeedHelpModal
+            showHelp={showHelp}
+            setShowHelp={setShowHelp}
+            onTriggerAI={handleAITrigger}
+            type={'qrcode'}
+         />
       </div>
    )
 }

@@ -4,7 +4,6 @@ import RightSidePanel from '../../components/TestKiosk/RightSidePanel';
 import CampusMap from '../../components/TestKiosk/CampusMap';
 import { useQuery } from '@tanstack/react-query';
 import { fetchKiosks, fetchBuildings, fetchRooms, pingAdmin } from '../../api/api';
-import { useLocationMatcher } from '../../hooks/useLocationMatcher';
 
 const TestKiosk = () => {
   const [kiosk, setKiosk] = useState(null);
@@ -30,15 +29,64 @@ const TestKiosk = () => {
     enabled: !!kiosk
   });
 
-  // Use the location matcher hook
-  const { processAILocation, isDataReady } = useLocationMatcher(buildingsData, roomsData);
-
   // Set default kiosk when kiosks data is loaded
   useEffect(() => {
     if (kiosksData?.length > 0 && !kiosk) {
       setKiosk(kiosksData[0]);
     }
   }, [kiosksData, kiosk]);
+
+  // Handle kiosk changes and update navigation paths accordingly
+  useEffect(() => {
+    if (!kiosk || !buildingsData) return;
+
+    // If we have an active room navigation, update it for the new kiosk
+    if (room && building) {
+      const targetBuilding = buildingsData.find(b => b._id === building._id);
+      if (targetBuilding) {
+        const roomsForKiosk = targetBuilding.existingRoom?.[kiosk.kioskID];
+        const updatedRoom = roomsForKiosk?.find(r => r._id === room._id);
+
+        if (updatedRoom) {
+          // Room exists for this kiosk - update navigation path
+          const roomWithBuilding = { ...updatedRoom, building: targetBuilding.name };
+          setRoom(roomWithBuilding);
+
+          if (updatedRoom.navigationPath && updatedRoom.navigationPath.length > 0) {
+            setCurrentPath([...updatedRoom.navigationPath]);
+          } else {
+            // No navigation path available, use kiosk position
+            const kioskPosition = {
+              x: kiosk.x || kiosk.positionX || kiosk.position?.x || kiosk.coordinates?.x || 0,
+              y: kiosk.y || kiosk.positionY || kiosk.position?.y || kiosk.coordinates?.y || 0
+            };
+            setCurrentPath([kioskPosition]);
+          }
+        } else {
+          // Room doesn't exist for this kiosk - clear navigation
+          console.log(`Room ${room.name} not available from kiosk ${kiosk.kioskID}`);
+          setRoom(null);
+          setCurrentPath([]);
+        }
+      }
+    }
+    // If we have an active building navigation, update it for the new kiosk
+    else if (building && !room) {
+      const targetBuilding = buildingsData.find(b => b._id === building._id);
+      if (targetBuilding?.navigationPath?.[kiosk.kioskID]) {
+        const newPath = targetBuilding.navigationPath[kiosk.kioskID];
+        setCurrentPath([...newPath]);
+      } else {
+        // No navigation path available for this kiosk to the building
+        console.log(`No navigation path to building ${building.name} from kiosk ${kiosk.kioskID}`);
+        const kioskPosition = {
+          x: kiosk.x || kiosk.positionX || kiosk.position?.x || kiosk.coordinates?.x || 0,
+          y: kiosk.y || kiosk.positionY || kiosk.position?.y || kiosk.coordinates?.y || 0
+        };
+        setCurrentPath([kioskPosition]);
+      }
+    }
+  }, [kiosk?.kioskID, buildingsData]); // Only depend on kiosk ID and buildings data
 
   // Handle location detection from AI
   const handleLocationDetected = (locationData) => {
@@ -152,7 +200,6 @@ const TestKiosk = () => {
         kiosk={kiosk}
         width={'20%'}
         height={'100%'}
-        onLocationDetected={handleLocationDetected}
       />
     </div>
   );

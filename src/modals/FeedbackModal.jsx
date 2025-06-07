@@ -73,9 +73,8 @@ const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
    if (!isOpen) return null;
 
    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-         <div className="bg-white shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Header */}
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 sm:p-6 md:p-8">
+         <div className="bg-white shadow-xl w-full max-w-[90vw] sm:max-w-[80vw] md:max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
                <h2 className="text-xl font-righteous text-[#110D79]">Send Feedback</h2>
                <button
@@ -86,10 +85,7 @@ const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
                   ×
                </button>
             </div>
-
-            {/* Form */}
             <form onSubmit={handleSubmit} className="p-6">
-               {/* Category Selection */}
                <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                      Feedback Type

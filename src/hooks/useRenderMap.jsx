@@ -130,7 +130,31 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
             name: "East Path",
             description: "Path connecting east campus buildings",
             path: "M81.0102 196.5L130 196.5L130 588.5V588.5C130 592.991 128.26 597.307 125.145 600.542L117 609L103 623L70 653.5L49.5 644L49.5001 642.5",
-         }
+         },
+         {
+            id: "pathway-3",
+            name: "Bridge",
+            description: "Path connecting east campus buildings",
+            path: "M496.33 278.71L486.055 298.772L485.829 299.212L486.268 299.442L561.827 339.21L549.289 363.321L471.758 322.071C468.692 320.114 467.03 316.578 467.462 312.986L467.511 312.639L467.981 309.653L477.447 290.724L477.664 290.289L477.236 290.06L172.688 126.303L176.435 119.748L176.446 119.727L176.457 119.703L180.239 111.192L496.33 278.71Z",
+         },
+         {
+            id: "pathway-4",
+            name: "Bridge",
+            description: "Path connecting east campus buildings",
+            path: "M180.364 111.229C166.348 145.328 132.683 167.174 95.8604 166.109L94.9863 166.08L80.5 165.519V100.376L131.944 85.5361L180.364 111.229Z",
+         },
+         {
+            id: "pathway-5",
+            name: "Bridge",
+            description: "Path connecting east campus buildings",
+            path: "M49 682C50.933 682 52.5 683.567 52.5 685.5V788.5H4V682H49Z",
+         },
+         {
+            id: "pathway-5",
+            name: "Bridge",
+            description: "Path connecting east campus buildings",
+            path: "M394.5 771.499V788.5H101.5V771L394.5 771.499Z",
+         },
       ];
 
       // Add pathways/lines first (so they appear under buildings)
