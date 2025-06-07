@@ -299,10 +299,7 @@ const RoomDetails = () => {
     }
   }, [selectedKiosk, originalBuildingData, isEditBuildingMode]);
 
-  // Handle room data fetching for edit room mode
   useEffect(() => {
-    if (isEditRoomMode) return; 
-
     if (isEditRoomMode && buildingID && roomID && selectedKiosk) {
       const getRoomData = async () => {
         try {
@@ -326,7 +323,21 @@ const RoomDetails = () => {
           });
           setNavigationGuide([...navigationGuideWithIds]);
 
-          // CRITICAL: Handle currentPath logic properly
+          // Get kiosk position first (fallback coordinates)
+          const getKioskPosition = () => ({
+            x: selectedKiosk.x ||
+              selectedKiosk.positionX ||
+              selectedKiosk.position?.x ||
+              selectedKiosk.coordinates?.x || 0,
+            y: selectedKiosk.y ||
+              selectedKiosk.positionY ||
+              selectedKiosk.position?.y ||
+              selectedKiosk.coordinates?.y || 0
+          });
+
+          const kioskPosition = getKioskPosition();
+
+          // Check if room has valid navigation path
           const hasValidNavigationPath = response.navigationPath &&
             Array.isArray(response.navigationPath) &&
             response.navigationPath.length > 0;
@@ -336,7 +347,8 @@ const RoomDetails = () => {
             const validPath = response.navigationPath.filter(point =>
               point &&
               typeof point === 'object' &&
-              (point.x !== undefined || point.y !== undefined) &&
+              (point.x !== undefined && point.y !== undefined) &&
+              !(point.x === 0 && point.y === 0) && // Exclude 0,0 coordinates as they might be invalid
               !Object.keys(point).every(key =>
                 point[key] === undefined ||
                 point[key] === null ||
@@ -345,31 +357,32 @@ const RoomDetails = () => {
             );
 
             if (validPath.length > 0) {
-              console.log('✅ Using room\'s existing navigation path:', validPath);
-              setCurrentPath([...validPath]);
-              return; // Exit early - we have valid room path data
+              // Check if the first point is close to kiosk position (within reasonable distance)
+              const firstPoint = validPath[0];
+              const distanceFromKiosk = Math.sqrt(
+                Math.pow(firstPoint.x - kioskPosition.x, 2) +
+                Math.pow(firstPoint.y - kioskPosition.y, 2)
+              );
+
+              // If the path seems valid and starts reasonably close to kiosk
+              if (distanceFromKiosk < 1000) { // Adjust this threshold as needed
+                console.log('✅ Using room\'s existing navigation path:', validPath);
+                setCurrentPath([...validPath]);
+                return;
+              } else {
+                console.log('⚠️ Room path exists but seems disconnected from kiosk, using kiosk position');
+              }
             }
           }
 
-          // If we reach here, room has no valid navigation path
-          // Use kiosk position as starting point
-          const kioskPosition = {
-            x: selectedKiosk.x ||
-              selectedKiosk.positionX ||
-              selectedKiosk.position?.x ||
-              selectedKiosk.coordinates?.x || 0,
-            y: selectedKiosk.y ||
-              selectedKiosk.positionY ||
-              selectedKiosk.position?.y ||
-              selectedKiosk.coordinates?.y || 0
-          };
-
-          console.log('⚠️ Room has no valid navigation path, using kiosk position:', kioskPosition);
+          // Fallback: Use kiosk position as starting point
+          console.log('⚠️ Using kiosk position as currentPath:', kioskPosition);
           setCurrentPath([kioskPosition]);
 
         } catch (error) {
           console.error('❌ Fetch room data error:', error);
-          // On error, still set kiosk position as fallback
+
+          // On error, ensure we still set kiosk position as fallback
           if (selectedKiosk) {
             const kioskPosition = {
               x: selectedKiosk.x ||
@@ -381,6 +394,7 @@ const RoomDetails = () => {
                 selectedKiosk.position?.y ||
                 selectedKiosk.coordinates?.y || 0
             };
+            console.log('🔄 Error fallback: Using kiosk position:', kioskPosition);
             setCurrentPath([kioskPosition]);
           }
         }
@@ -388,7 +402,32 @@ const RoomDetails = () => {
 
       getRoomData();
     }
-  }, [isEditRoomMode, buildingID, roomID, selectedKiosk?.kioskID])
+  }, [isEditRoomMode, buildingID, roomID, selectedKiosk?.kioskID]);
+
+  useEffect(() => {
+    // Safety check: If currentPath is empty or has invalid coordinates, set kiosk position
+    if (selectedKiosk && (
+      currentPath.length === 0 ||
+      (currentPath.length === 1 && currentPath[0].x === 0 && currentPath[0].y === 0)
+    )) {
+      const kioskPosition = {
+        x: selectedKiosk.x ||
+          selectedKiosk.positionX ||
+          selectedKiosk.position?.x ||
+          selectedKiosk.coordinates?.x || 0,
+        y: selectedKiosk.y ||
+          selectedKiosk.positionY ||
+          selectedKiosk.position?.y ||
+          selectedKiosk.coordinates?.y || 0
+      };
+
+      // Only update if kiosk position is valid (not 0,0)
+      if (kioskPosition.x !== 0 || kioskPosition.y !== 0) {
+        console.log('🔧 Race condition fix: Setting kiosk position as currentPath:', kioskPosition);
+        setCurrentPath([kioskPosition]);
+      }
+    }
+  }, [selectedKiosk, currentPath]);
 
   useEffect(() => {
     const interval = setInterval(() => {
