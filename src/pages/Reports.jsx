@@ -36,38 +36,112 @@ const Reports = () => {
   // Calculate chatbot percentage change
   const calculateChatbotPercentageChange = () => {
     if (!data?.chatbot?.dailyInteractions || data.chatbot.dailyInteractions.length === 0) {
-      return { percentage: 0, trend: 'neutral', isValid: false };
+      return {
+        percentage: 0,
+        trend: 'neutral',
+        isValid: false,
+        message: 'No data available'
+      };
     }
 
-    const dailyInteractions = [...data.chatbot.dailyInteractions].reverse();
+    // Sort by date to ensure proper chronological order
+    const sortedInteractions = [...data.chatbot.dailyInteractions].sort((a, b) => {
+      return new Date(a._id) - new Date(b._id);
+    });
 
-    const totalDays = dailyInteractions.length;
+    const totalDays = sortedInteractions.length;
+
+    // Need at least 7 days for meaningful comparison
+    if (totalDays < 7) {
+      return {
+        percentage: 0,
+        trend: 'neutral',
+        isValid: false,
+        message: 'No comparison data available'
+      };
+    }
+
     const splitPoint = Math.floor(totalDays / 2);
+    const previousPeriod = sortedInteractions.slice(0, splitPoint);
+    const currentPeriod = sortedInteractions.slice(splitPoint);
 
-    const previousPeriod = dailyInteractions.slice(0, splitPoint);
-    const currentPeriod = dailyInteractions.slice(splitPoint);
-
-    const currentTotal = currentPeriod.reduce((sum, day) => sum + day.count, 0);
     const previousTotal = previousPeriod.reduce((sum, day) => sum + day.count, 0);
+    const currentTotal = currentPeriod.reduce((sum, day) => sum + day.count, 0);
 
-    if (previousTotal === 0 && currentTotal === 0) {
-      return { percentage: 0, trend: 'neutral', isValid: false };
+    // Calculate averages per day to normalize for different period lengths
+    const previousAvgPerDay = previousTotal / previousPeriod.length;
+    const currentAvgPerDay = currentTotal / currentPeriod.length;
+
+    console.log('Percentage calculation debug:', {
+      totalDays,
+      previousPeriod: previousPeriod.length,
+      currentPeriod: currentPeriod.length,
+      previousTotal,
+      currentTotal,
+      previousAvgPerDay: previousAvgPerDay.toFixed(2),
+      currentAvgPerDay: currentAvgPerDay.toFixed(2)
+    });
+
+    // Set minimum thresholds for meaningful comparison
+    const MIN_INTERACTIONS_FOR_COMPARISON = 5; // Minimum total interactions needed
+    const MAX_REASONABLE_PERCENTAGE = 300; // Cap at 300% to avoid extreme values
+
+    // If previous period has too little data, show as "new activity" instead of percentage
+    if (previousTotal < MIN_INTERACTIONS_FOR_COMPARISON) {
+      if (currentTotal === 0) {
+        return {
+          percentage: 0,
+          trend: 'neutral',
+          isValid: false,
+          message: 'No significant activity in either period'
+        };
+      }
+
+      return {
+        percentage: 0,
+        trend: 'up',
+        isValid: false,
+        message: `New activity detected (${currentTotal} interactions)`,
+        showAsNewActivity: true,
+        currentTotal
+      };
     }
+
+    // Both periods have sufficient data - calculate percentage
     if (previousTotal === 0) {
-      return { percentage: 100, trend: 'up', isValid: true };
+      return {
+        percentage: 100,
+        trend: 'up',
+        isValid: true,
+        message: 'Started from zero',
+        currentTotal,
+        previousTotal: 0
+      };
     }
 
     const percentageChange = ((currentTotal - previousTotal) / previousTotal) * 100;
+    let cappedPercentage = Math.abs(percentageChange);
+
+    // Cap extreme percentages
+    if (cappedPercentage > MAX_REASONABLE_PERCENTAGE) {
+      cappedPercentage = MAX_REASONABLE_PERCENTAGE;
+    }
+
     const trend = percentageChange > 0 ? 'up' : percentageChange < 0 ? 'down' : 'neutral';
 
     return {
-      percentage: Math.abs(Math.round(percentageChange)),
+      percentage: Math.round(cappedPercentage),
       trend,
       isValid: true,
       currentTotal,
-      previousTotal
+      previousTotal,
+      rawPercentageChange: percentageChange,
+      isCapped: Math.abs(percentageChange) > MAX_REASONABLE_PERCENTAGE
     };
   };
+
+  // Updated display function to handle the new cases
+
 
 
   // Calculate percentage change for scans based on timeframe and dailyScans data
@@ -297,17 +371,32 @@ const Reports = () => {
   };
 
   const formatChatbotChangeDisplay = () => {
-    if (!chatbotChangeStats.isValid) {
-      return 'No comparison data available';
+    const stats = calculateChatbotPercentageChange();
+
+    if (!stats.isValid) {
+      if (stats.showAsNewActivity) {
+        return (
+          <span className="text-blue-600">
+            New Activity: {stats.currentTotal} interactions
+          </span>
+        );
+      }
+      return (
+        <span className="text-gray-600">
+          {stats.message}
+        </span>
+      );
     }
-    const sign = chatbotChangeStats.trend === 'up' ? '+' : chatbotChangeStats.trend === 'down' ? '-' : '';
 
-    console.log('saywhat', chatbotChangeStats);
+    const sign = stats.trend === 'up' ? '+' : stats.trend === 'down' ? '-' : '';
+    const color = stats.trend === 'up' ? 'text-green-600' :
+      stats.trend === 'down' ? 'text-red-600' : 'text-gray-600';
 
-    const color = chatbotChangeStats.trend === 'up' ? 'text-green-600' : chatbotChangeStats.trend === 'down' ? 'text-red-600' : 'text-gray-600';
+    const cappedIndicator = stats.isCapped ? '+ (capped)' : '';
+
     return (
       <span className={color}>
-        {sign}{chatbotChangeStats.percentage}% from {getTimeframeLabel()}
+        {sign}{stats.percentage}%{cappedIndicator} from {getTimeframeLabel()}
       </span>
     );
   };
@@ -399,7 +488,7 @@ const Reports = () => {
                 <span className='text-[1.25rem] font-bold'>
                   {data.totalDestinationSearches.toLocaleString()}
                 </span>
-                <span className='text-[.875rem]'>{formatSearchesChangeDisplay()}</span>
+                <span className='text-[.875rem] text-[#4B5563]'>{formatSearchesChangeDisplay()}</span>
               </div>
             </div>
           </div>
