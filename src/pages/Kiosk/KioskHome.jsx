@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { fetchKiosk } from '../../api/api';
 import { useNavigate } from 'react-router-dom';
+import yangaLogo from '../../../public/Photos/yangaLogo.png'
 
 const KioskHome = () => {
   const navigate = useNavigate();
@@ -72,10 +73,15 @@ const KioskHome = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+      <div className="bg-white shadow-2xl p-8 w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <img
+              src={yangaLogo}
+              alt=""
+             
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome</h1>
           <p className="text-gray-600">Please enter your kiosk key to continue</p>
@@ -94,7 +100,7 @@ const KioskHome = () => {
                 value={kioskKey}
                 onChange={(e) => setKioskKey(e.target.value)}
                 placeholder="Enter your kiosk key"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-center font-mono text-lg"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-center font-mono text-lg"
                 disabled={isLoading}
               />
             </div>
@@ -102,14 +108,14 @@ const KioskHome = () => {
 
           {/* Error Message */}
           {error && (
-            <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
+            <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3">
               <span className="text-sm">{error}</span>
             </div>
           )}
 
           {/* Success Message */}
           {verificationStatus === 'success' && (
-            <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+            <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3">
               <span className="text-sm">Key verified successfully! Access granted.</span>
             </div>
           )}
@@ -118,7 +124,7 @@ const KioskHome = () => {
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-200 ${isLoading
+            className={`w-full py-3 px-4 font-semibold text-white transition-all duration-200 ${isLoading
               ? 'bg-gray-400 cursor-not-allowed'
               : verificationStatus === 'success'
                 ? 'bg-green-600 hover:bg-green-700'
@@ -142,7 +148,7 @@ const KioskHome = () => {
             <button
               type="button"
               onClick={handleReset}
-              className="w-full py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+              className="w-full py-2 px-4 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             >
               Try Again
             </button>
