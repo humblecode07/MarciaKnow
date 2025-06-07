@@ -36,6 +36,53 @@ const TestKiosk = () => {
     }
   }, [kiosksData, kiosk]);
 
+  // Add this helper function to check if data is ready
+  const isDataReady = buildingsData && roomsData && kiosk;
+
+  // Add this function to process AI location detection
+  const processAILocation = (locationData) => {
+    if (!isDataReady) return null;
+
+    const { name, type, action } = locationData;
+
+    // Search in buildings first
+    const matchedBuilding = buildingsData.find(building =>
+      building.name.toLowerCase().includes(name.toLowerCase()) ||
+      name.toLowerCase().includes(building.name.toLowerCase())
+    );
+
+    if (matchedBuilding) {
+      return {
+        type: 'building',
+        item: matchedBuilding,
+        action: action || 'navigate',
+        originalQuery: name
+      };
+    }
+
+    // Search in rooms
+    for (const building of buildingsData) {
+      const roomsForKiosk = building.existingRoom?.[kiosk.kioskID];
+      if (roomsForKiosk) {
+        const matchedRoom = roomsForKiosk.find(room =>
+          room.name.toLowerCase().includes(name.toLowerCase()) ||
+          name.toLowerCase().includes(room.name.toLowerCase())
+        );
+
+        if (matchedRoom) {
+          return {
+            type: 'room',
+            item: { ...matchedRoom, building: building.name },
+            action: action || 'navigate',
+            originalQuery: name
+          };
+        }
+      }
+    }
+
+    return null; // No match found
+  };
+
   // Handle kiosk changes and update navigation paths accordingly
   useEffect(() => {
     if (!kiosk || !buildingsData) return;
@@ -131,19 +178,6 @@ const TestKiosk = () => {
           console.log('Triggering search for:', matchResult.originalQuery);
           break;
 
-        // case 'info':
-        //   // Show information about the location
-        //   if (matchResult.type === 'building') {
-        //     const buildingItem = matchResult.item;
-        //     setBuilding(buildingItem);
-        //     setRoom(null);
-        //   } else if (matchResult.type === 'room') {
-        //     const roomItem = matchResult.item;
-        //     setRoom(roomItem);
-        //     setBuilding(null);
-        //   }
-        //   break;
-
         default:
           console.log('No specific action defined for:', matchResult.action);
       }
@@ -164,7 +198,6 @@ const TestKiosk = () => {
     }, 30000);
 
     pingAdmin();
-
     return () => clearInterval(interval);
   }, []);
 
@@ -200,9 +233,10 @@ const TestKiosk = () => {
         kiosk={kiosk}
         width={'20%'}
         height={'100%'}
+        onLocationDetected={handleLocationDetected}
       />
     </div>
   );
 }
 
-export default TestKiosk
+export default TestKiosk;
