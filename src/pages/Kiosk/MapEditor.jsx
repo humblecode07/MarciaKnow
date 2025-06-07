@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { deleteRoom, fetchBuildings, pingAdmin } from '../../api/api';
+import { deleteRoom, fetchBuildings, fetchKiosks, pingAdmin } from '../../api/api';
 import AddIcon from '../../assets/Icons/AddIcon';
 import EditIcon from '../../assets/Icons/EditIcon';
 import ShowIcon from '../../assets/Icons/ShowIcon';
@@ -25,6 +25,18 @@ const MapEditor = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  const {
+    data: kiosksData = [],
+    isLoading: kiosksLoading,
+    error: kiosksError
+  } = useQuery({
+    queryKey: ['kiosks'], // Changed from 'buildings' to 'kiosks'
+    queryFn: fetchKiosks,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  console.log(kiosksData);
 
   // Local state for UI interactions
   const [expandedBuildings, setExpandedBuildings] = useState({});
@@ -156,6 +168,12 @@ const MapEditor = () => {
     navigate(`/admin/test-kiosk?${params.toString()}`);
   };
 
+  const getKioskNameById = useCallback((kioskId) => {
+    const kiosk = kiosksData.find(k => k.kioskID === kioskId);
+    return kiosk ? kiosk.name : kioskId; // fallback to kioskId if not found
+  }, [kiosksData]);
+
+
   // Handle loading and error states
   if (buildingsLoading) {
     return (
@@ -229,11 +247,12 @@ const MapEditor = () => {
                           <button
                             key={tab}
                             onClick={() => setActiveTab(buildingId, tab)}
-                            className={`px-4 py-2 border-solid border-b-[2px]  ${activeTab === tab ? 'text-[#4353ff] border-[#4353ff]' : 'border-[#eee]'}`}
+                            className={`px-4 py-2 border-solid border-b-[2px] ${activeTab === tab ? 'text-[#4353ff] border-[#4353ff]' : 'border-[#eee]'}`}
                           >
-                            {tab}
+                            {getKioskNameById(tab)}
                           </button>
                         ))}
+
                       </div>
 
                       <div className="mt-4">
