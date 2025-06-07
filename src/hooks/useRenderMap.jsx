@@ -6,6 +6,8 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
    const location = useLocation();
    const path = location.pathname;
 
+   const hasAutoZoomedRef = useRef(false);
+
    const zoomTransformRef = useRef(d3.zoomIdentity);
    const zoomBehaviorRef = useRef(null);
 
@@ -19,6 +21,10 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
    const isValidPoint = (point) => {
       return point && isValidCoordinate(point.x) && isValidCoordinate(point.y);
    };
+
+   useEffect(() => {
+      hasAutoZoomedRef.current = false;
+   }, [currentPath?.length]);
 
    // coords of kiosk for edit kiosk mode
    useEffect(() => {
@@ -91,6 +97,8 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
          .duration(1000)
          .call(zoomBehavior.transform, transform);
    };
+
+
 
    useEffect(() => {
       if (!svgRef.current || buildings.length === 0) return;
@@ -168,39 +176,6 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
             .attr("data-name", pathway.name)
             .attr("data-description", pathway.description)
             .attr("cursor", "pointer")
-            .on("click", function (event) {
-               event.stopPropagation();
-
-               // Reset all buildings to default color
-               g.selectAll("path[id^='building-']")
-                  .attr("fill", "#FFFFFF")
-                  .attr("stroke", "#1a237e");
-
-               // Reset all pathways to default
-               g.selectAll("path[id^='pathway-']")
-                  .attr("stroke", "#555555")
-                  .attr("stroke-width", 1);
-
-               // Highlight selected pathway
-               d3.select(this)
-                  .attr("stroke", "#FF0000")
-                  .attr("stroke-width", 1);
-
-               onSelectBuilding({
-                  name: d3.select(this).attr("data-name"),
-                  description: d3.select(this).attr("data-description"),
-               });
-            })
-            .on("mouseover", function () {
-               if (!selectedBuilding || d3.select(this).attr("data-name") !== selectedBuilding.name) {
-                  d3.select(this).attr("stroke", "#777777").attr("stroke-width", 1);
-               }
-            })
-            .on("mouseout", function () {
-               if (!selectedBuilding || d3.select(this).attr("data-name") !== selectedBuilding.name) {
-                  d3.select(this).attr("stroke", "#555555").attr("stroke-width", 1);
-               }
-            });
       });
 
       // Add buildings as paths
@@ -603,10 +578,13 @@ const useRenderMap = (svgRef, buildings, selectedBuilding, onSelectBuilding, mod
       }
 
       // Auto-zoom to navigation path when it's displayed
-      if (currentPath && currentPath.length >= 2 &&
+      if (currentPath && currentPath.length >= 2 && !hasAutoZoomedRef.current &&
          (mode === import.meta.env.VITE_TEST_KIOSK ||
             mode === import.meta.env.VITE_QR_CODE_KIOSK ||
             mode === import.meta.env.VITE_CLIENT_KIOSK)) {
+         // Mark that we've auto-zoomed
+         hasAutoZoomedRef.current = true;
+
          // Add a small delay to ensure the path is rendered first
          setTimeout(() => {
             zoomToPath(currentPath, svg, zoom, 100); // 100px padding around the path
