@@ -83,18 +83,18 @@ const TestKiosk = () => {
           console.log('Triggering search for:', matchResult.originalQuery);
           break;
 
-        case 'info':
-          // Show information about the location
-          if (matchResult.type === 'building') {
-            const buildingItem = matchResult.item;
-            setBuilding(buildingItem);
-            setRoom(null);
-          } else if (matchResult.type === 'room') {
-            const roomItem = matchResult.item;
-            setRoom(roomItem);
-            setBuilding(null);
-          }
-          break;
+        // case 'info':
+        //   // Show information about the location
+        //   if (matchResult.type === 'building') {
+        //     const buildingItem = matchResult.item;
+        //     setBuilding(buildingItem);
+        //     setRoom(null);
+        //   } else if (matchResult.type === 'room') {
+        //     const roomItem = matchResult.item;
+        //     setRoom(roomItem);
+        //     setBuilding(null);
+        //   }
+        //   break;
 
         default:
           console.log('No specific action defined for:', matchResult.action);

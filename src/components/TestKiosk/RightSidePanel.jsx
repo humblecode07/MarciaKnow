@@ -2,13 +2,14 @@ import { useState, useRef } from 'react'
 import DangoMenuIcon from "../../assets/Icons/DangoMenuIcon"
 import SentIcon from "../../assets/Icons/SentIcon"
 import yangaLogo from '../../../public/Photos/yangaLogo.png'
+import userLogo from '../../../public/Photos/userLogo.png'
 import { askGroq, logChatbotInteraction } from '../../api/api'
 
 const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
    const [messages, setMessages] = useState([
       {
          id: 1,
-         text: "Hello! I'm your Virtual AI Assistant. I'm here to help you navigate the campus and find buildings, rooms, or facilities. Feel free to ask me anything about locations or directions!",
+         text: "Hello! I'm your Virtual AI Assistant, MarciaBot. I'm here to help you navigate the campus and find buildings, rooms, or facilities. Feel free to ask me anything about locations or directions!",
          sender: "ai"
       }
    ])
@@ -147,6 +148,8 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
       }
    }
 
+   console.log(messages);
+
    return (
       <section
          className='flex flex-col bg-[#FBFCF8] shadow-md relative font-righteous'
@@ -186,7 +189,7 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
                   </div>
                   {message.sender === 'user' && (
                      <img
-                        src={yangaLogo}
+                        src={userLogo}
                         alt=""
                         className='w-[1.5rem] h-[1.5rem] object-cover'
                      />
@@ -208,7 +211,6 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
                </div>
             )}
          </div>
-
          <form onSubmit={handleSendMessage} className='w-[18.75rem] h-[2.9375rem] bg-[#FBF9F6] shadow-md flex items-center justify-center gap-[0.625rem] border-solid border-t-[1px] border-black'>
             <div className='w-[14.8125rem] h-[1.625rem] px-[0.625rem] flex items-center font-roboto font-light text-[.75rem] border-solid border-[1px] border-black'>
                <input

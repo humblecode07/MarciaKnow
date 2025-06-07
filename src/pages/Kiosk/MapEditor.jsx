@@ -6,10 +6,11 @@ import ShowIcon from '../../assets/Icons/ShowIcon';
 import HideIcon from '../../assets/Icons/HideIcon';
 import DeleteIcon from '../../assets/Icons/DeleteIcon';
 import ShowIconTwo from '../../assets/Icons/ShowIconTwo';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const MapEditor = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const {
@@ -144,6 +145,17 @@ const MapEditor = () => {
     }
   }, [buildings, getBuildingId, deleteRoomMutation]);
 
+  const handleShowRoom = (room, building, kioskId) => {
+    const params = new URLSearchParams({
+      roomId: room._id,
+      buildingId: building._id,
+      kioskId: kioskId,
+      showPath: 'true'
+    });
+
+    navigate(`/admin/test-kiosk?${params.toString()}`);
+  };
+
   // Handle loading and error states
   if (buildingsLoading) {
     return (
@@ -160,6 +172,8 @@ const MapEditor = () => {
       </div>
     );
   }
+
+  console.log(buildings);
 
   return (
     <div className="w-[73.98dvw] flex flex-col gap-[1.1875rem] ml-[19.5625rem] mt-[1.875rem]">
@@ -229,7 +243,10 @@ const MapEditor = () => {
                               <div className='flex justify-between'>
                                 <span className='font-bold'>{room?.name}</span>
                                 <div className='flex gap-[2rem]'>
-                                  <button className='flex items-center gap-[0.75rem]'>
+                                  <button
+                                    onClick={() => handleShowRoom(room, building, activeTab)}
+                                    className='flex items-center gap-[0.75rem]'
+                                  >
                                     <ShowIconTwo />
                                     <span className='text-[#110D79] text-[.875rem]'>Show</span>
                                   </button>

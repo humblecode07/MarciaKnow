@@ -136,7 +136,9 @@ export const createRoom = async (data, buildingID, kioskID) => {
 
 export const editRoom = async (data, buildingID, kioskID, roomID) => {
    try {
-      const response = await axiosPrivate.patch(`/room/${buildingID}/${kioskID}/${roomID}`, data);
+      const response = await axiosPrivate.patch(`/room/${buildingID}/kiosk/${kioskID}/room/${roomID}`, data);
+
+      console.log(response);
 
       return response.data;
    }
@@ -148,7 +150,7 @@ export const editRoom = async (data, buildingID, kioskID, roomID) => {
 
 export const fetchRoom = async (buildingID, roomID) => {
    try {
-      const response = await axiosPrivate.get(`/room/${buildingID}/${roomID}`);
+      const response = await axiosPrivate.get(`/room/${buildingID}/room/${roomID}`);
 
       return response.data;
    }

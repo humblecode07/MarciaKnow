@@ -105,6 +105,8 @@ const RoomDetails = () => {
     setSelectedKiosk(selected);
   };
 
+  console.log(buildingID, selectedKiosk?.kioskID, roomID)
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -136,14 +138,14 @@ const RoomDetails = () => {
     try {
       let response = null;
       if (path.includes("add-room")) {
-        response = await createRoom(formData, buildingID, selectedKiosk.kioskID);
+        response = await createRoom(formData, buildingID, selectedKiosk?.kioskID);
         alert('Room successfully created!');
         queryClient.invalidateQueries(['kiosks']); // 👈 refetch kiosk data
         navigate('/admin/map-editor');
       }
 
       else if (path.includes("edit-room")) {
-        response = await editRoom(formData, buildingID, selectedKiosk.kioskID, roomID);
+        response = await editRoom(formData, buildingID, selectedKiosk?.kioskID, roomID);
         alert('Room successfully edited!');
         queryClient.invalidateQueries(['kiosks']); // 👈 refetch kiosk data
         navigate('/admin/map-editor');
@@ -299,6 +301,8 @@ const RoomDetails = () => {
 
   // Handle room data fetching for edit room mode
   useEffect(() => {
+    if (isEditRoomMode) return; 
+
     if (isEditRoomMode && buildingID && roomID && selectedKiosk) {
       const getRoomData = async () => {
         try {
@@ -313,60 +317,78 @@ const RoomDetails = () => {
             data: img
           })));
 
+          // Handle navigation guide with IDs
           const navigationGuideWithIds = response.navigationGuide.map(guide => {
             if (!guide.id) {
-              console.log('ferrari')
               return { ...guide, id: uuidv4() };
             }
             return guide;
           });
-
-          console.log(navigationGuideWithIds)
           setNavigationGuide([...navigationGuideWithIds]);
 
-          // Check if navigationPath exists and has valid points
-          if (response.navigationPath &&
+          // CRITICAL: Handle currentPath logic properly
+          const hasValidNavigationPath = response.navigationPath &&
             Array.isArray(response.navigationPath) &&
-            response.navigationPath.length > 0) {
+            response.navigationPath.length > 0;
 
+          if (hasValidNavigationPath) {
             // Filter out empty/invalid path points
             const validPath = response.navigationPath.filter(point =>
               point &&
               typeof point === 'object' &&
               (point.x !== undefined || point.y !== undefined) &&
-              !Object.keys(point).every(key => point[key] === undefined || point[key] === null || point[key] === '')
+              !Object.keys(point).every(key =>
+                point[key] === undefined ||
+                point[key] === null ||
+                point[key] === ''
+              )
             );
 
             if (validPath.length > 0) {
-              console.log('Using existing navigation path:', validPath);
+              console.log('✅ Using room\'s existing navigation path:', validPath);
               setCurrentPath([...validPath]);
-            } else {
-              // No valid path points, use kiosk position as starting point
-              const kioskPosition = {
-                x: selectedKiosk.x || selectedKiosk.positionX || selectedKiosk.position?.x || selectedKiosk.coordinates?.x || 0,
-                y: selectedKiosk.y || selectedKiosk.positionY || selectedKiosk.position?.y || selectedKiosk.coordinates?.y || 0
-              };
-              console.log('No valid path points, using kiosk position:', kioskPosition);
-              setCurrentPath([kioskPosition]);
+              return; // Exit early - we have valid room path data
             }
-          } else {
-            // No navigationPath exists, initialize with kiosk position
-            const kioskPosition = {
-              x: selectedKiosk.x || selectedKiosk.positionX || selectedKiosk.position?.x || selectedKiosk.coordinates?.x || 0,
-              y: selectedKiosk.y || selectedKiosk.positionY || selectedKiosk.position?.y || selectedKiosk.coordinates?.y || 0
-            };
-            console.log('No navigation path found, using kiosk position:', kioskPosition);
-            setCurrentPath([kioskPosition]);
           }
 
+          // If we reach here, room has no valid navigation path
+          // Use kiosk position as starting point
+          const kioskPosition = {
+            x: selectedKiosk.x ||
+              selectedKiosk.positionX ||
+              selectedKiosk.position?.x ||
+              selectedKiosk.coordinates?.x || 0,
+            y: selectedKiosk.y ||
+              selectedKiosk.positionY ||
+              selectedKiosk.position?.y ||
+              selectedKiosk.coordinates?.y || 0
+          };
+
+          console.log('⚠️ Room has no valid navigation path, using kiosk position:', kioskPosition);
+          setCurrentPath([kioskPosition]);
+
         } catch (error) {
-          console.error('Fetch error:', error);
+          console.error('❌ Fetch room data error:', error);
+          // On error, still set kiosk position as fallback
+          if (selectedKiosk) {
+            const kioskPosition = {
+              x: selectedKiosk.x ||
+                selectedKiosk.positionX ||
+                selectedKiosk.position?.x ||
+                selectedKiosk.coordinates?.x || 0,
+              y: selectedKiosk.y ||
+                selectedKiosk.positionY ||
+                selectedKiosk.position?.y ||
+                selectedKiosk.coordinates?.y || 0
+            };
+            setCurrentPath([kioskPosition]);
+          }
         }
       };
 
       getRoomData();
     }
-  }, [isEditRoomMode, buildingID, roomID, selectedKiosk]); // Added selectedKiosk as dependency
+  }, [isEditRoomMode, buildingID, roomID, selectedKiosk?.kioskID])
 
   useEffect(() => {
     const interval = setInterval(() => {

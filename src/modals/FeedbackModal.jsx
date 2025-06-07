@@ -200,14 +200,14 @@ const FeedbackModal = ({ isOpen, onClose, kiosk }) => {
                      type="button"
                      onClick={onClose}
                      disabled={isSubmitting}
-                     className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                     className="px-6 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                   >
                      Cancel
                   </button>
                   <button
                      type="submit"
                      disabled={isSubmitting || !formData.message.trim()}
-                     className="px-6 py-2 bg-[#4329D8] text-white rounded-md hover:bg-[#3422B8] disabled:bg-gray-400 disabled:cursor-not-allowed"
+                     className="px-6 py-2 bg-[#4329D8] text-white hover:bg-[#3422B8] disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
                      {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                   </button>

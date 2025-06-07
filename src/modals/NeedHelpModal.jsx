@@ -12,7 +12,7 @@ const NeedHelpModal = ({ showHelp, setShowHelp, onTriggerAI }) => {
          content: [
             {
                question: "How do I search for a location?",
-               answer: "Use the search bar at the top. Type the name of any building, room, or facility you're looking for."
+               answer: "Use the search bar in the left panel. Type the name of the building, room, or facility you're looking for."
             },
             {
                question: "Search tips for better results",
@@ -20,7 +20,7 @@ const NeedHelpModal = ({ showHelp, setShowHelp, onTriggerAI }) => {
             },
             {
                question: "What if I can't find what I'm looking for?",
-               answer: "Try different keywords or ask our AI assistant below for help!"
+               answer: "Try different keywords or ask our AI assistant for help!"
             }
          ]
       },

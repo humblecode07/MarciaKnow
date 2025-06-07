@@ -147,10 +147,13 @@ const Profile = () => {
                               {new Date(log.dateOfChange).toLocaleString()}
                             </span>
                           </div>
-                          <button className='h-[1.8125rem] px-[.875rem] bg-[#D1D6FA] text-[#110D79] text-[.875rem] flex gap-[0.8125rem] items-center justify-center'>
+                          <NavLink 
+                            to={'/admin/kiosk-settings'}
+                            className='h-[1.8125rem] px-[.875rem] bg-[#D1D6FA] text-[#110D79] text-[.875rem] flex gap-[0.8125rem] items-center justify-center'
+                          >
                             <ShowIconTwo />
                             <span>View</span>
-                          </button>
+                          </NavLink>
                         </div>
                       </div>
                     ))}
@@ -211,10 +214,13 @@ const Profile = () => {
                                 })}
                               </span>
                             </div>
-                            <button className='h-[1.8125rem] px-[.875rem] bg-[#D1D6FA] text-[#110D79] text-[.875rem] flex gap-[0.8125rem] items-center justify-center rounded hover:bg-[#B8C5F0] transition-colors'>
+                            <NavLink 
+                              to={'/admin/map-editor'}
+                              className='h-[1.8125rem] px-[.875rem] bg-[#D1D6FA] text-[#110D79] text-[.875rem] flex gap-[0.8125rem] items-center justify-center rounded hover:bg-[#B8C5F0] transition-colors'
+                            >
                               <ShowIconTwo />
                               <span>View</span>
-                            </button>
+                            </NavLink>
                           </div>
                         </div>
                       );

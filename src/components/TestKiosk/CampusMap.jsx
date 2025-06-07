@@ -5,7 +5,7 @@ import InfoIcon from '../../assets/Icons/InfoIcon';
 import QRCodeIcon from '../../assets/Icons/QRCodeIcon';
 import SentIconSMIcon from '../../assets/Icons/SentIconSMIcon';
 import FullscreenIcon from '../../assets/Icons/FullscreenIcon';
-import { fetchBuildings } from '../../api/api';
+import { fetchBuilding, fetchBuildings, fetchRoom } from '../../api/api';
 import { useLocation } from 'react-router-dom';
 import useRenderMap from '../../hooks/useRenderMap';
 import usePathNavigation from '../../hooks/usePathNavigation';
@@ -139,6 +139,76 @@ const CampusMap = ({
       }
    }, [selectedBuilding, currentKiosk, setCurrentPath, setBuilding, closeAllPanels]);
 
+   const searchParams = new URLSearchParams(location.search);
+
+   useEffect(() => {
+      const searchParams = new URLSearchParams(location.search);
+      const roomId = searchParams.get('roomId');
+      const buildingId = searchParams.get('buildingId');
+      const kioskId = searchParams.get('kioskId');
+      const shouldShowPath = searchParams.get('showPath') === 'true';
+
+      // Only proceed if we have all required parameters
+      if (roomId && buildingId && kioskId && shouldShowPath && buildings.length > 0) {
+         const initializeFromURL = async () => {
+            try {
+               // First, find and set the kiosk
+               const targetKiosk = kiosksData?.find(k => k.kioskID === kioskId);
+               if (targetKiosk && targetKiosk.kioskID !== currentKiosk?.kioskID) {
+                  setKiosk(targetKiosk);
+               }
+
+               // Find the building
+               const targetBuilding = buildings.find(b => b._id === buildingId);
+               if (!targetBuilding) {
+                  console.error('Building not found:', buildingId);
+                  return;
+               }
+
+               // Set the building
+               setSelectedBuilding(targetBuilding);
+
+               // Find the room in the building's rooms for the specific kiosk
+               const roomsForKiosk = targetBuilding.existingRoom?.[kioskId];
+               if (!roomsForKiosk) {
+                  console.error('No rooms found for kiosk:', kioskId);
+                  return;
+               }
+
+               const targetRoom = roomsForKiosk.find(room => room._id === roomId);
+               if (!targetRoom) {
+                  console.error('Room not found:', roomId);
+                  return;
+               }
+
+               // Set the room with building info
+               const roomWithBuilding = {
+                  ...targetRoom,
+                  building: targetBuilding.name
+               };
+               setSelectedRoom(roomWithBuilding);
+
+               // Set the navigation path if it exists
+               if (targetRoom.navigationPath) {
+                  setCurrentPath(targetRoom.navigationPath);
+                  setRoom(roomWithBuilding); // Update the parent component's room state
+               }
+
+               // Optionally, you can also set the building in parent state
+               setBuilding(targetBuilding);
+
+               // Show the room detail panel
+               setCurrentPanel(PANEL_TYPES.ROOM_DETAIL);
+
+            } catch (error) {
+               console.error('Error initializing from URL:', error);
+            }
+         };
+
+         initializeFromURL();
+      }
+   }, [location.search, buildings, kiosksData, currentKiosk?.kioskID, setKiosk, setCurrentPath, setRoom, setBuilding]);
+
    // Load buildings effect
    useEffect(() => {
       const getBuildings = async () => {
@@ -239,9 +309,8 @@ const CampusMap = ({
          className='relative flex flex-col gap-[1rem]'
          style={{ height, width }}
       >
-         {/* Kiosk Selector */}
          {mode === import.meta.env.VITE_TEST_KIOSK && kiosksData && (
-            <div className="w-[49.4375rem] h-[2.25rem] flex items-center justify-center bg-[#D1D6FA] border-solid border-[1px] border-[#110D79]">
+            <div className="w-[49.4375rem] h-[2.25rem] flex items-center justify-center bg-[#D1D6FA] border-solid border-[1px] border-[#110D79] relative z-[20]">
                <select
                   id="kioskSelect"
                   aria-label="Select a kiosk"
@@ -261,7 +330,6 @@ const CampusMap = ({
                </select>
             </div>
          )}
-
          {/* Main SVG Map */}
          <svg
             ref={svgRef}
