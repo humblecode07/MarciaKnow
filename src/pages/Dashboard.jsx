@@ -11,14 +11,26 @@ import {
   fetchRecentAdminLogs,
   fetchKiosks,
   fetchAdmins,
-  pingAdmin
+  pingAdmin,
+  fetchAdmin
 } from '../api/api';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useReportsData } from '../hooks/useReportsData';
 import PopularDestinationsGraph from '../components/PopularDestinationGraph';
+import useAuth from '../hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 
 const Dashboard = () => {
+  const { admin } = useAuth();
+  const decodedToken = jwtDecode(admin.accessToken);
+  const { adminId } = decodedToken;
+
+  const { data: adminData, error, isLoading } = useQuery({
+    queryKey: ['admin', adminId],
+    queryFn: () => fetchAdmin(adminId),
+  });
+  
   const [stats, setStats] = useState(null);
   const [recentScans, setRecentScans] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
@@ -251,7 +263,7 @@ const Dashboard = () => {
       <div className='w-[] flex flex-col gap-[.875rem]'>
         <div className='flex flex-col'>
           <h1 className='font-poppins font-bold text-[3rem]'>
-            HI, ニューロ様
+            HI, {adminData?.full_name}
           </h1>
           <Divider />
         </div>
