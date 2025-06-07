@@ -4,6 +4,7 @@ import Divider from '../components/Divider'
 import UserIcon from '../assets/Icons/Dashboard/UserIcon';
 import ClockIcon from '../assets/Icons/Dashboard/ClockIcon';
 import Adrenaline from '../assets/Icons/Dashboard/Adrenaline';
+import { jwtDecode } from 'jwt-decode';
 import {
   fetchDashboardStats,
   fetchRecentScanLogs,
