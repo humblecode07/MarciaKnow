@@ -154,22 +154,6 @@ const KioskHome = () => {
             </button>
           )}
         </div>
-
-        {/* Demo Keys */}
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-xs text-gray-600 font-medium mb-2">Demo Keys (for testing):</p>
-          <div className="grid grid-cols-1 gap-1">
-            {validKeys.slice(0, 2).map((key) => (
-              <button
-                key={key}
-                onClick={() => setKioskKey(key)}
-                className="text-xs text-blue-600 hover:text-blue-800 text-left font-mono"
-              >
-                {key}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
