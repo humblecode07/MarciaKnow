@@ -122,9 +122,11 @@ export const fetchNavigationIcons = async () => {
    }
 }
 
+// CHANGE
+
 export const createRoom = async (data, buildingID, kioskID) => {
    try {
-      const response = await axiosPrivate.post(`/room/${buildingID}/kiosk/${kioskID}`, data);
+      const response = await axiosPrivate.put(`/building/${buildingID}/${kioskID}`, data);
 
       return response.data;
    }

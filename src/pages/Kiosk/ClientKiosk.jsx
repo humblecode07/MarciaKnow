@@ -174,16 +174,20 @@ const ClientKiosk = () => {
           currentPath={currentPath}
           setCurrentPath={setCurrentPath}
           kiosk={kiosk}
+          setKiosk={setKiosk}
           setRoom={setRoom}
+          building={building}
           setBuilding={setBuilding}
+          room={room}
           width={'50dvw'}
-          height={'100dvh'}
+          panelWidth={'47'}
         />
         <RightSidePanel
           kiosk={kiosk}
           width={'20%'}
           height={'100dvh'}
           onLocationDetected={handleLocationDetected}
+          selectedBuilding={building}
         />
       </div>
     </div>

@@ -12,6 +12,7 @@ import ResetIcon from '../../../assets/Icons/ResetIcon';
 import RevertIcon from '../../../assets/Icons/RevertIcon';
 import NavigationIconsModal from '../../../modals/NavigationIconsModal';
 import { pingAdmin } from '../../../api/api';
+import BuildingLayoutBuilder from '../../../components/BuildingLayoutBuilder';
 
 const RoomDetails = () => {
   const queryClient = useQueryClient();
@@ -38,6 +39,8 @@ const RoomDetails = () => {
   const [buildingName, setBuildingName] = useState('');
   const [roomName, setRoomName] = useState('');
 
+  const [building, setBuilding] = useState('');
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [floor, setFloor] = useState(1);
@@ -45,6 +48,11 @@ const RoomDetails = () => {
   const [selectedKiosk, setSelectedKiosk] = useState(null);
   const [navigationGuide, setNavigationGuide] = useState([]);
   const [images, setImages] = useState([]);
+
+  // For rooms
+  const [floors, setFloors] = useState({
+    1: [] // floor 1 with empty rooms
+  });
 
   // Store original data for kiosk-specific navigation guides and paths
   const [originalBuildingData, setOriginalBuildingData] = useState(null);
@@ -99,6 +107,8 @@ const RoomDetails = () => {
     navigate(-1);
   };
 
+  console.log(images);
+
   // Handle kiosk selection change (only for building edit mode)
   const handleKioskChange = (kioskId) => {
     const selected = kiosksData.find(kiosk => kiosk.kioskID === kioskId);
@@ -117,14 +127,14 @@ const RoomDetails = () => {
 
     const formData = new FormData();
 
-    formData.append('kioskID', selectedKiosk.kioskID);
-    formData.append('id', buildingID);
+    // Building basic data
     formData.append('name', name);
     formData.append('description', description);
     formData.append('floor', floor);
     formData.append('path', JSON.stringify(currentPath));
     formData.append('navigationGuide', JSON.stringify(navigationGuide));
 
+    // Handle images
     const storedImages = images.filter(img => img.type === 'stored');
     const newFiles = images.filter(img => img.type === 'file');
 
@@ -132,33 +142,106 @@ const RoomDetails = () => {
     formData.append('imageIDs', JSON.stringify(storedIDs));
 
     newFiles.forEach(imgObj => {
-      formData.append('images[]', imgObj.data);
+      formData.append('files', imgObj.data);
     });
 
-    try {
-      let response = null;
-      if (path.includes("add-room")) {
-        response = await createRoom(formData, buildingID, selectedKiosk?.kioskID);
-        alert('Room successfully created!');
-        queryClient.invalidateQueries(['kiosks']); // 👈 refetch kiosk data
-        navigate('/admin/map-editor');
+    // Process rooms data - organize by floor
+    const roomsByFloor = {};
+
+    // Extract all rooms from the floors object
+    const allRooms = Object.values(floors).flat();
+
+    allRooms.forEach(room => {
+      const floorNum = room.floor.toString();
+      if (!roomsByFloor[floorNum]) {
+        roomsByFloor[floorNum] = [];
       }
 
-      else if (path.includes("edit-room")) {
-        response = await editRoom(formData, buildingID, selectedKiosk?.kioskID, roomID);
-        alert('Room successfully edited!');
-        queryClient.invalidateQueries(['kiosks']); // 👈 refetch kiosk data
-        navigate('/admin/map-editor');
-      }
-      else if (path.includes("edit-building")) {
-        response = await editBuilding(formData, buildingID, selectedKiosk.kioskID);
-        alert('Building successfully edited!');
-        navigate('/admin/map-editor');
+      // Handle room images - separate stored vs new files
+      const storedRoomImages = room.images ? room.images.filter(img => img.type === 'stored' || img._id) : [];
+      const newRoomFiles = room.images ? room.images.filter(img => img.type === 'file') : [];
+
+      // Get IDs of images to retain
+      const retainedRoomImageIds = storedRoomImages.map(img => img._id || img.data?._id).filter(Boolean);
+
+      // Add new room image files to FormData with dynamic field names
+      if (newRoomFiles.length > 0) {
+        newRoomFiles.forEach(imgObj => {
+          formData.append(`room_${room.id}_images`, imgObj.data);
+        });
       }
 
+      // Clean up room data for backend
+      const cleanRoom = {
+        id: room.id,
+        x: room.x,
+        y: room.y,
+        width: room.width,
+        height: room.height,
+        label: room.label,
+        color: room.color,
+        floor: room.floor,
+        navigationPath: room.navigationPath || [],
+        navigationGuide: room.navigationGuide || [],
+        retainedImageIds: retainedRoomImageIds, // Add this for backend processing
+        createdAt: room.createdAt,
+        updatedAt: room.updatedAt || new Date().toISOString()
+      };
+
+      roomsByFloor[floorNum].push(cleanRoom);
+    });
+
+    formData.append('rooms', JSON.stringify(roomsByFloor));
+
+    // Process stairs data - convert to the format expected by backend
+    const stairsData = {};
+    if (building.stairs) {
+      Object.keys(building.stairs).forEach(floorNum => {
+        stairsData[floorNum] = [];
+
+        // Convert stairs object to array
+        const floorStairs = building.stairs[floorNum];
+        Object.values(floorStairs).forEach(stair => {
+          const cleanStair = {
+            id: stair.id,
+            type: stair.type || 'stairs',
+            x: stair.x,
+            y: stair.y,
+            width: stair.width,
+            height: stair.height,
+            label: stair.label,
+            floor: stair.floor,
+            direction: stair.direction,
+            createdAt: stair.createdAt,
+            updatedAt: stair.updatedAt || new Date().toISOString()
+          };
+
+          stairsData[floorNum].push(cleanStair);
+        });
+      });
     }
-    catch (error) {
-      console.error('Failed to create/edit:', error);
+
+    formData.append('stairs', JSON.stringify(stairsData));
+
+    console.log('Submitting data:');
+    console.log('Rooms by floor:', roomsByFloor);
+    console.log('Stairs data:', stairsData);
+
+    try {
+      // Make the API call to update building
+      const response = await createRoom(formData, buildingID, selectedKiosk.kioskID);
+
+      console.log(response);
+
+      if (response) {
+        alert('Building updated successfully!');
+        // Handle success (redirect, update state, etc.)
+      } else {
+        throw new Error(response || 'Update failed');
+      }
+
+    } catch (error) {
+      console.error('Failed to update building:', error);
       alert('Operation failed. Please try again.');
     }
   }
@@ -212,6 +295,8 @@ const RoomDetails = () => {
         try {
           const response = await fetchBuilding(buildingID);
 
+          setBuilding(response);
+
           setBuildingName(response.name);
           setName(response.name);
           setDescription(response.description);
@@ -223,7 +308,7 @@ const RoomDetails = () => {
 
           // Store the original data for kiosk-specific updates
           setOriginalBuildingData(response);
-
+          setFloors(response.rooms);
         } catch (error) {
           console.error('Failed to fetch building data:', error);
         }
@@ -233,6 +318,7 @@ const RoomDetails = () => {
     }
   }, [buildingID, isEditBuildingMode]);
 
+  console.log(originalBuildingData);
   useEffect(() => {
     if (isEditBuildingMode && originalBuildingData && selectedKiosk) {
       const kioskId = selectedKiosk.kioskID;
@@ -439,7 +525,7 @@ const RoomDetails = () => {
     return () => clearInterval(interval);
   }, []);
 
-  console.log(currentPath);
+  console.log(building);
 
   if (kiosksLoading || navigationIconsLoading) return <div>Loading...</div>;
 
@@ -537,6 +623,8 @@ const RoomDetails = () => {
                         ? URL.createObjectURL(image.data)
                         : image;
 
+                    console.log(image);
+
                     return (
                       <div key={index} className="relative w-[8rem] h-[8rem]">
                         <img
@@ -602,7 +690,6 @@ const RoomDetails = () => {
                 </div>
               </>
             )}
-
             {/* Navigation Guide and Map - Show for edit modes and add room */}
             {!isAddRoomMode && (
               <div className='flex gap-[1.1875rem]'>
@@ -680,7 +767,6 @@ const RoomDetails = () => {
               </div>
             )}
           </div>
-
           <div className='flex justify-end gap-[.5rem]'>
             <button
               onClick={handleCancel}
@@ -696,6 +782,32 @@ const RoomDetails = () => {
             </button>
           </div>
         </div>
+
+      </div>
+      <div className='flex flex-col'>
+        <span className='font-bold font-poppins text-[1.125rem]'>Building Layout Builder</span>
+        <span className='text-sm text-[#4B5563]'>
+          Lorem ipsum
+        </span>
+
+        {building.path ? (
+          <BuildingLayoutBuilder
+            building={{
+              path: building.builderPath,
+            }}
+            navigationIcons={navigationIcons}
+            floors={floors}
+            setFloors={setFloors}
+            buildingData={building}
+            setBuilding={setBuilding}
+            width={800}
+            height={600}
+          />
+
+        ) : (
+          <p>Loading building...</p>
+        )}
+
       </div>
     </div>
   );

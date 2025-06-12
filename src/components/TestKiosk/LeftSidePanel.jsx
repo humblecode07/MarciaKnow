@@ -172,7 +172,8 @@ const LeftSidePanel = ({
       }
    };
 
-   console.log(rooms);
+   console.log('building', building);
+   console.log('rooms', rooms);
 
    if (buildingsLoading || roomsLoading) {
       return <div>Loading...</div>;
@@ -301,6 +302,20 @@ const LeftSidePanel = ({
             <div className='flex-1 min-h-0 flex flex-col mt-[1.5625rem] px-[1rem] pb-[7rem]'>
                {room ? (
                   <div className='flex flex-col font-righteous gap-[1.125rem] h-full'>
+                     <span className='text-[1.125rem] flex-shrink-0'>{room.label}</span>
+                     <img
+                        className="h-[10rem] object-cover rounded-[.5rem]"
+                        src={
+                           room.image?.[0]?.file_path
+                              ? `${import.meta.env.VITE_BASE_URL}/image/${room.image[0].file_path}`
+                              : "/placeholder.jpg" // or any default path
+                        }
+                        onError={(e) => {
+                           e.currentTarget.src = "https://placehold.co/600x400"; // fallback if fetch fails
+                        }}
+                        alt={room.name || "Room Image"}
+                     />
+
                      <span className='text-[1.125rem] flex-shrink-0'>Navigation Guide:</span>
                      <div className='flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto pr-2'>
                         {room.navigationGuide?.length > 0 ? (
@@ -343,7 +358,21 @@ const LeftSidePanel = ({
                   </div>
                ) : building ? (
                   <div className='flex flex-col font-righteous gap-[1.125rem] h-full'>
-                     <span className='text-[1.125rem] flex-shrink-0'>Navigation Guide:</span>
+                     <span className='text-[1.125rem] flex-shrink-0'>{building.name}</span>
+                     <img
+                        className="h-[10rem] object-cover rounded-[.5rem]"
+                        src={
+                           building?.image?.[0]?.file_path
+                              ? `${import.meta.env.VITE_BASE_URL}/image/${building.image[0].file_path}`
+                              : "https://placehold.co/600x400"
+                        }
+                        onError={(e) => {
+                           e.currentTarget.src = "https://placehold.co/600x400"; // fallback if fetch fails
+                        }}
+                        alt={building?.name || "Building Image"}
+                     />
+
+                     <span className='text-[1] flex-shrink-0'>Navigation Guide</span>
                      <div className='flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto pr-2'>
                         {building?.navigationGuide?.[kiosk?.kioskID]?.length > 0 ? (
                            building.navigationGuide[kiosk.kioskID].map((path, index) => (

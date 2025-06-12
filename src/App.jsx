@@ -23,6 +23,7 @@ import RequireAuth from "./components/RequireAuth"
 import Settings from "./pages/Settings"
 import useOnlineStatus from "./hooks/useOnlineStatus"
 import UserFeedback from "./pages/UserFeedback"
+import BuildingViewer from "./pages/Yuh"
 
 const superAdminRole = Number(import.meta.env.VITE_ROLE_SUPER_ADMIN);
 const adminRole = Number(import.meta.env.VITE_ROLE_ADMIN);
@@ -47,6 +48,10 @@ const router = createBrowserRouter([
    {
       path: 'qr-code/:buildingID/:kioskID',
       element: <ScanGuide />
+   },
+   {
+      path: 'sample',
+      element: <BuildingViewer />
    },
    {
       path: '*',

@@ -1,21 +1,138 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import DangoMenuIcon from "../../assets/Icons/DangoMenuIcon"
 import SentIcon from "../../assets/Icons/SentIcon"
 import yangaLogo from '../../../public/Photos/yangaLogo.png'
 import userLogo from '../../../public/Photos/userLogo.png'
 import { askGroq, logChatbotInteraction } from '../../api/api'
 
-const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
+const RightSidePanel = ({ kiosk, width, height, onLocationDetected, selectedBuilding }) => {
    const [messages, setMessages] = useState([
       {
          id: 1,
-         text: "Hello! I'm your Virtual AI Assistant, MarciaBot. I'm here to help you navigate the campus and find buildings, rooms, or facilities. Feel free to ask me anything about locations or directions!",
+         text: "Hello! I'm your Virtual AI Assistant, MarciaBot. I'm here to help you navigate the campus and find buildings, rooms, or facilities. Simply click on any building on the map to learn more about it, or ask me anything about locations and directions!",
          sender: "ai"
       }
    ])
    const [inputMessage, setInputMessage] = useState('')
    const [isLoading, setIsLoading] = useState(false)
-   const sessionIdRef = useRef(Date.now().toString()) // Generate session ID once
+   const [lastClickedBuilding, setLastClickedBuilding] = useState(null)
+   const sessionIdRef = useRef(Date.now().toString())
+   const messagesEndRef = useRef(null)
+
+   // Auto-scroll to bottom when new messages are added
+   const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+   }
+
+   useEffect(() => {
+      scrollToBottom()
+   }, [messages])
+
+   // Handle building selection from map - Enhanced version
+   useEffect(() => {
+      if (selectedBuilding && selectedBuilding.name) {
+         // Prevent duplicate requests for the same building
+         if (lastClickedBuilding && lastClickedBuilding._id === selectedBuilding._id) {
+            return
+         }
+         
+         setLastClickedBuilding(selectedBuilding)
+         handleBuildingClick(selectedBuilding)
+      }
+   }, [selectedBuilding])
+
+   const handleBuildingClick = async (building) => {
+      // Don't show the "you clicked" message - make it seamless
+      // Instead, immediately start getting the description
+      
+      // Add a more natural system message
+      const clickMessage = {
+         id: Date.now(),
+         text: `📍 **${building.name}**`,
+         sender: "building_header"
+      }
+      setMessages(prev => [...prev, clickMessage])
+
+      // Create a more specific query for better AI responses
+      const buildingQuery = `Provide a comprehensive description of ${building.name}. Include:
+      - What the building is primarily used for
+      - Key facilities, departments, or services available
+      - Any notable features or information students should know
+      - Accessibility information if relevant
+      
+      Keep the response informative but conversational, as if you're a helpful campus guide.`
+
+      setIsLoading(true)
+      const startTime = Date.now()
+
+      try {
+         const response = await askGroq(buildingQuery, kiosk.kioskID)
+         const responseTime = Date.now() - startTime
+
+         // Add AI response to chat
+         const aiMessage = {
+            id: Date.now() + 1,
+            text: response.answer,
+            sender: "ai"
+         }
+         setMessages(prev => [...prev, aiMessage])
+
+         // Add a helpful follow-up message
+         const followUpMessage = {
+            id: Date.now() + 2,
+            text: "💡 Need directions to this building? Just ask me 'How do I get to " + building.name + "?' or click on another building to learn more!",
+            sender: "system"
+         }
+         setMessages(prev => [...prev, followUpMessage])
+
+         // Log the interaction
+         const interactionData = {
+            kioskID: kiosk.kioskID,
+            userMessage: `Building clicked: ${building.name}`,
+            aiResponse: response.answer || "No response generated",
+            detectedLocation: response.detected_location || {},
+            responseTime: responseTime,
+            sessionId: sessionIdRef.current,
+            interactionType: 'building_click'
+         }
+
+         try {
+            await logChatbotInteraction(interactionData)
+            console.log('Building click interaction logged successfully')
+         } catch (logError) {
+            console.error('Failed to log building click interaction:', logError)
+         }
+
+      } catch (error) {
+         console.error('Error getting building information:', error)
+         const responseTime = Date.now() - startTime
+
+         const errorMessage = {
+            id: Date.now() + 1,
+            text: `I apologize, but I couldn't retrieve information about ${building.name} at the moment. Please try clicking on it again or feel free to ask me directly about this building.`,
+            sender: "ai"
+         }
+         setMessages(prev => [...prev, errorMessage])
+
+         // Log error interaction
+         try {
+            const errorInteractionData = {
+               kioskID: kiosk.kioskID,
+               userMessage: `Building clicked: ${building.name}`,
+               aiResponse: "Error: Failed to get building information",
+               detectedLocation: {},
+               responseTime: responseTime,
+               sessionId: sessionIdRef.current,
+               interactionType: 'building_click_error'
+            }
+            await logChatbotInteraction(errorInteractionData)
+         } catch (logError) {
+            console.error('Failed to log error interaction:', logError)
+         }
+      } finally {
+         setIsLoading(false)
+      }
+   }
 
    const handleSendMessage = async (e) => {
       e.preventDefault()
@@ -56,10 +173,11 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
          const interactionData = {
             kioskID: kiosk.kioskID,
             userMessage: currentMessage,
-            aiResponse: response.answer || "No response generated", // Add fallback
+            aiResponse: response.answer || "No response generated",
             detectedLocation: response.detected_location || {},
             responseTime: responseTime,
-            sessionId: sessionIdRef.current
+            sessionId: sessionIdRef.current,
+            interactionType: 'text_query'
          }
 
          console.log('Full AI Response:', response)
@@ -129,7 +247,8 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
                aiResponse: "Error: Failed to get response",
                detectedLocation: {},
                responseTime: responseTime,
-               sessionId: sessionIdRef.current
+               sessionId: sessionIdRef.current,
+               interactionType: 'text_query_error'
             }
 
             const response = await logChatbotInteraction(errorInteractionData);
@@ -179,11 +298,21 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
                         className='w-[1.5rem] h-[1.5rem] object-cover'
                      />
                   )}
-                  <div className={`px-[0.625rem] py-[.5rem] overflow-hidden ${message.sender === 'system'
-                     ? 'bg-[#E8F5E8] border-l-4 border-[#4CAF50]'
-                     : 'bg-[#F5F5F5]'
-                     }`}>
-                     <span className='text-[.75rem]'>
+                  {message.sender === 'building_header' && (
+                     <div className='w-[1.5rem] h-[1.5rem] flex items-center justify-center bg-[#4CAF50] rounded-full'>
+                        <span className='text-white text-[0.625rem]'>🏢</span>
+                     </div>
+                  )}
+                  <div className={`px-[0.625rem] py-[.5rem] overflow-hidden ${
+                     message.sender === 'building_header'
+                        ? 'bg-[#E8F5E8] border-l-4 border-[#4CAF50] font-medium'
+                        : message.sender === 'system'
+                           ? 'bg-[#FFF3E0] border-l-4 border-[#FF9800]'
+                           : message.sender === 'ai'
+                              ? 'bg-[#F5F5F5]'
+                              : 'bg-[#E3F2FD]'
+                  }`}>
+                     <span className={`text-[.75rem] ${message.sender === 'building_header' ? 'font-semibold' : ''}`}>
                         {message.text}
                      </span>
                   </div>
@@ -205,17 +334,18 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected }) => {
                   />
                   <div className='px-[0.625rem] py-[.5rem] bg-[#F5F5F5] overflow-hidden'>
                      <span className='text-[.75rem]'>
-                        Typing...
+                        Getting building information...
                      </span>
                   </div>
                </div>
             )}
+            <div ref={messagesEndRef} />
          </div>
          <form onSubmit={handleSendMessage} className='w-[18.75rem] h-[2.9375rem] bg-[#FBF9F6] shadow-md flex items-center justify-center gap-[0.625rem] border-solid border-t-[1px] border-black'>
             <div className='w-[14.8125rem] h-[1.625rem] px-[0.625rem] flex items-center font-roboto font-light text-[.75rem] border-solid border-[1px] border-black'>
                <input
                   type="text"
-                  placeholder='Type your message...'
+                  placeholder='Ask me anything or click a building on the map...'
                   className='w-[13.5625rem] outline-none'
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}

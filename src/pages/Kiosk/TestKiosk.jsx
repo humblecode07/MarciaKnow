@@ -207,6 +207,8 @@ const TestKiosk = () => {
     return <div>Error loading kiosks data.</div>;
   }
 
+  console.log(room);
+
   return (
     <div className="flex ml-[19.5625rem] mt-[1.875rem]">
       <LeftSidePanel
@@ -226,14 +228,18 @@ const TestKiosk = () => {
         kiosk={kiosk}
         setKiosk={setKiosk}
         setRoom={setRoom}
+        building={building}
         setBuilding={setBuilding}
         kiosksData={kiosksData}
+        room={room}
+        panelWidth={'36.8125'}
       />
       <RightSidePanel
         kiosk={kiosk}
         width={'20%'}
         height={'100%'}
         onLocationDetected={handleLocationDetected}
+        selectedBuilding={building}
       />
     </div>
   );
