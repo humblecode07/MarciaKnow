@@ -232,6 +232,86 @@ const renderMaps = (svgRef, buildings, zoomTransformRef, mode, setBuilding, sele
       .attr("fill", "#FBFCF8")
       .attr("pointer-events", "all");
 
+   const pathways = [
+      {
+         id: "pathway-1",
+         name: "Main Pathway",
+         description: "Central campus pathway",
+         path: "M101.504 780.06L90.0001 780.06L90.5 688L150 634.5L157.5 627L159.243 625.19C166.589 617.562 171.555 607.961 173.537 597.558V597.558C174.177 594.194 174.5 590.776 174.5 587.351L174.5 321.707C174.5 317.846 176.489 314.257 179.763 312.211V312.211C181.551 311.093 183.619 310.503 185.727 310.508L377 311L535.5 391.5L533 396",
+      },
+      {
+         id: "pathway-2",
+         name: "East Path",
+         description: "Path connecting east campus buildings",
+         path: "M81.0102 196.5L130 196.5L130 588.5V588.5C130 592.991 128.26 597.307 125.145 600.542L117 609L103 623L70 653.5L49.5 644L49.5001 642.5",
+      },
+      {
+         id: "pathway-3",
+         name: "Bridge",
+         description: "Path connecting east campus buildings",
+         path: "M496.33 278.71L486.055 298.772L485.829 299.212L486.268 299.442L561.827 339.21L549.289 363.321L471.758 322.071C468.692 320.114 467.03 316.578 467.462 312.986L467.511 312.639L467.981 309.653L477.447 290.724L477.664 290.289L477.236 290.06L172.688 126.303L176.435 119.748L176.446 119.727L176.457 119.703L180.239 111.192L496.33 278.71Z",
+      },
+      {
+         id: "pathway-4",
+         name: "Bridge",
+         description: "Path connecting east campus buildings",
+         path: "M180.364 111.229C166.348 145.328 132.683 167.174 95.8604 166.109L94.9863 166.08L80.5 165.519V100.376L131.944 85.5361L180.364 111.229Z",
+      },
+      {
+         id: "pathway-5",
+         name: "Bridge",
+         description: "Path connecting east campus buildings",
+         path: "M49 682C50.933 682 52.5 683.567 52.5 685.5V788.5H4V682H49Z",
+      },
+      {
+         id: "pathway-5",
+         name: "Bridge",
+         description: "Path connecting east campus buildings",
+         path: "M394.5 771.499V788.5H101.5V771L394.5 771.499Z",
+      },
+   ];
+
+   // Add pathways/lines first (so they appear under buildings)
+   pathways.forEach(pathway => {
+      g.append("path")
+         .attr("d", pathway.path)
+         .attr("fill", "none")
+         .attr("stroke", "#1a237e")
+         .attr("stroke-width", 1)
+         .attr("id", pathway.id)
+         .attr("data-name", pathway.name)
+         .attr("data-description", pathway.description)
+         .attr("cursor", "pointer")
+         .on("click", function (event) {
+            event.stopPropagation();
+
+            // Reset all buildings to default color
+            g.selectAll("path[id^='building-']")
+               .attr("fill", "#FFFFFF")
+               .attr("stroke", "#1a237e");
+
+            // Reset all pathways to default
+            g.selectAll("path[id^='pathway-']")
+               .attr("stroke", "#555555")
+               .attr("stroke-width", 1);
+
+            // Highlight selected pathway
+            d3.select(this)
+               .attr("stroke", "#FF0000")
+               .attr("stroke-width", 1);
+         })
+         .on("mouseover", function () {
+            if (!selectedBuilding || d3.select(this).attr("data-name") !== selectedBuilding.name) {
+               d3.select(this).attr("stroke", "#777777").attr("stroke-width", 1);
+            }
+         })
+         .on("mouseout", function () {
+            if (!selectedBuilding || d3.select(this).attr("data-name") !== selectedBuilding.name) {
+               d3.select(this).attr("stroke", "#555555").attr("stroke-width", 1);
+            }
+         });
+   });
+
    buildings.forEach(building => {
       const buildingPath = g.append("path")
          .attr("d", building.path)

@@ -29,17 +29,17 @@ const RightSidePanel = ({ kiosk, width, height, onLocationDetected, selectedBuil
    }, [messages])
 
    // Handle building selection from map - Enhanced version
-   useEffect(() => {
-      if (selectedBuilding && selectedBuilding.name) {
-         // Prevent duplicate requests for the same building
-         if (lastClickedBuilding && lastClickedBuilding._id === selectedBuilding._id) {
-            return
-         }
+   // useEffect(() => {
+   //    if (selectedBuilding && selectedBuilding.name) {
+   //       // Prevent duplicate requests for the same building
+   //       if (lastClickedBuilding && lastClickedBuilding._id === selectedBuilding._id) {
+   //          return
+   //       }
          
-         setLastClickedBuilding(selectedBuilding)
-         handleBuildingClick(selectedBuilding)
-      }
-   }, [selectedBuilding])
+   //       setLastClickedBuilding(selectedBuilding)
+   //       handleBuildingClick(selectedBuilding)
+   //    }
+   // }, [selectedBuilding])
 
    const handleBuildingClick = async (building) => {
       // Don't show the "you clicked" message - make it seamless

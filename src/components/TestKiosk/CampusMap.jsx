@@ -11,6 +11,7 @@ import useRenderMap from '../../hooks/useRenderMap';
 import usePathNavigation from '../../hooks/usePathNavigation';
 import QRCode from "react-qr-code";
 import BuildingLayoutBuilder from '../BuildingLayoutBuilder';
+import ExpandableDescription from '../ExpandableDescription';
 
 // Panel types enum for better state management
 const PANEL_TYPES = {
@@ -327,67 +328,88 @@ const CampusMap = ({
                )}
 
                {/* Rooms Panel - only show if building has rooms */}
-               {building && building.rooms && Object.keys(building.rooms).length > 0 && (
-                  <div
-                     className="absolute bottom-4 left-4 right-4 h-[16rem] bg-white rounded-lg shadow-lg flex flex-col gap-[1rem] z-20 px-[.75rem] py-[1rem]"
-                     style={{ width: `${panelWidth}rem` }}
-                  >
 
-                     {/* Header with building name and floor dropdown */}
-                     <div className='flex justify-between items-center font-roboto'>
-                        <span className='font-bold text-gray-800'>
-                           {building.name} - Floor {selectedFloor}
-                        </span>
-                        <select
-                           className='border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-                           value={selectedFloor}
-                           onChange={(e) => setSelectedFloor(e.target.value)}
-                        >
-                           {Object.keys(building.rooms).map(floor => (
-                              <option key={floor} value={floor}>Floor {floor}</option>
-                           ))}
-                        </select>
-                     </div>
-
-                     {/* Rooms container with visible scrollbar */}
-                     <div className='flex gap-[.75rem] overflow-x-auto pb-2 flex-1'>
-                        {building.rooms[selectedFloor]?.length > 0 ? (
-                           building.rooms[selectedFloor].map(room => (
-                              <div
-                                 key={room.id}
-                                 className='flex flex-col justify-start gap-[.5rem] flex-shrink-0 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors min-w-[9.5rem] border border-transparent hover:border-gray-200'
-                                 onClick={() => {
-                                    setRoom(room)
-                                    setViewMode('indoor')
-                                 }}
-                              >
-                                 <img
-                                    className="w-[8.25rem] h-[5.5rem] object-cover rounded-[.5rem] border border-gray-200"
-                                    src={room.image || ''}
-                                    onError={(e) => {
-                                       e.currentTarget.src = "https://placehold.co/600x400";
-                                    }}
-                                    alt={room?.name || room?.label || "Room Image"}
-                                 />
-
-                                 {/* Room label container with adequate height */}
-                                 <div className='flex flex-col items-center min-h-[2.5rem] justify-center px-1'>
-                                    <span className='text-center text-sm font-medium text-gray-700 leading-tight w-full break-words hyphens-auto'>
-                                       {room?.name || room?.label || 'Room'}
-                                    </span>
-                                 </div>
+               {/* Building Panel - shows for any building, with or without rooms */}
+               {building && (
+                  <>
+                     <div
+                        className="absolute bottom-4 left-4 right-4 bg-white rounded-lg shadow-lg flex flex-col z-20"
+                        style={{ width: `${panelWidth}rem` }}
+                     >
+                        {/* Main panel content - only show if building has rooms */}
+                        {building.rooms && Object.keys(building.rooms).length > 0 ? (
+                           <div className="flex flex-col gap-[1rem] px-[.75rem] py-[1rem] h-[16rem] overflow-hidden">
+                              {/* Header with building name and floor dropdown */}
+                              <div className='flex justify-between items-center font-roboto'>
+                                 <span className='font-bold text-gray-800'>
+                                    {building.name} - Floor {selectedFloor}
+                                 </span>
+                                 <select
+                                    className='border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+                                    value={selectedFloor}
+                                    onChange={(e) => setSelectedFloor(e.target.value)}
+                                 >
+                                    {Object.keys(building.rooms).map(floor => (
+                                       <option key={floor} value={floor}>Floor {floor}</option>
+                                    ))}
+                                 </select>
                               </div>
-                           ))
+
+                              {/* Rooms container with visible scrollbar */}
+                              <div className='flex gap-[.75rem] overflow-x-auto pb-2 flex-1'>
+                                 {building.rooms[selectedFloor]?.length > 0 ? (
+                                    building.rooms[selectedFloor].map(room => (
+                                       <div
+                                          key={room.id}
+                                          className='flex flex-col justify-start gap-[.5rem] flex-shrink-0 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors min-w-[9.5rem] border border-transparent hover:border-gray-200'
+                                          onClick={() => {
+                                             setRoom(room)
+                                             setViewMode('indoor')
+                                          }}
+                                       >
+                                          <img
+                                             className="w-[8.25rem] h-[5.5rem] object-cover rounded-[.5rem] border border-gray-200"
+                                             src={room.image || ''}
+                                             onError={(e) => {
+                                                e.currentTarget.src = "https://placehold.co/600x400";
+                                             }}
+                                             alt={room?.name || room?.label || "Room Image"}
+                                          />
+
+                                          {/* Room label container with adequate height */}
+                                          <div className='flex flex-col items-center min-h-[2.5rem] justify-center px-1'>
+                                             <span className='text-center text-sm font-medium text-gray-700 leading-tight w-full break-words hyphens-auto'>
+                                                {room?.name || room?.label || 'Room'}
+                                             </span>
+                                          </div>
+                                       </div>
+                                    ))
+                                 ) : (
+                                    <div className="flex items-center justify-center w-full text-gray-500 text-sm">
+                                       No rooms available on this floor
+                                    </div>
+                                 )}
+                              </div>
+                           </div>
                         ) : (
-                           <div className="flex items-center justify-center w-full text-gray-500 text-sm">
-                              No rooms available on this floor
+                           /* Header for buildings without rooms */
+                           <div className="px-[.75rem] py-[1rem]">
+                              <div className='flex justify-between items-center font-roboto'>
+                                 <span className='font-bold text-gray-800'>
+                                    {building.name}
+                                 </span>
+                              </div>
                            </div>
                         )}
+
+                        {/* Expandable Description - Always show for any building */}
+                        <ExpandableDescription
+                           building={building}
+                           selectedFloor={selectedFloor}
+                           hasRooms={building.rooms && Object.keys(building.rooms).length > 0}
+                        />
                      </div>
-
-                     {/* Room count indicator */}
-
-                  </div>
+                  </>
                )}
             </>
          )}
