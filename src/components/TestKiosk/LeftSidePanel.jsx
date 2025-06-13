@@ -371,7 +371,6 @@ const LeftSidePanel = ({
                         }}
                         alt={building?.name || "Building Image"}
                      />
-
                      <span className='text-[1] flex-shrink-0'>Navigation Guide</span>
                      <div className='flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto pr-2'>
                         {building?.navigationGuide?.[kiosk?.kioskID]?.length > 0 ? (

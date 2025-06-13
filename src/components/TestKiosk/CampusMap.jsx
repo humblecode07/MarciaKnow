@@ -279,9 +279,10 @@ const CampusMap = ({
 
    return (
       <section
-         className='relative flex flex-col gap-[1rem]'
-         style={{ height, width }}
+         className="relative flex flex-col gap-[1rem]"
+         style={{ height: mode === import.meta.env.VITE_ADD_ROOM ? '100%' : undefined }}
       >
+
          {viewMode === 'campus' && (
             <>
                {mode === import.meta.env.VITE_TEST_KIOSK && kiosksData && (
@@ -309,8 +310,8 @@ const CampusMap = ({
                {/* Main SVG Map */}
                <svg
                   ref={svgRef}
-                  width={width}
-                  height="100%"
+                  width={mode === import.meta.env.VITE_CLIENT_KIOSK || mode === import.meta.env.VITE_QR_CODE_KIOSK ? width : '100%'}
+                  height={mode === import.meta.env.VITE_QR_CODE_KIOSK ? height : "100%"}
                   style={{ border: '1px solid #ccc' }}
                   preserveAspectRatio='xMidYMid meet'
                />
@@ -401,7 +402,7 @@ const CampusMap = ({
                room={room}
                setRoom={setRoom}
                setViewMode={setViewMode}
-               width={'100%'}
+               width={mode === import.meta.env.VITE_CLIENT_KIOSK ? '50dvw' : '100%'}
                height={'100%'}
             />
          )}

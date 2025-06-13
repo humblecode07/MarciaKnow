@@ -267,7 +267,8 @@ const renderMaps = (svgRef, buildings, zoomTransformRef, mode, setBuilding, sele
                   navigationPath: building.navigationPath,
                   path: building.path,
                   rooms: building.rooms,
-                  builderPath: building.builderPath
+                  builderPath: building.builderPath,
+                  stairs: building.stairs
                });
 
                setCurrentPath(building.navigationPath[selectedKiosk.kioskID]);

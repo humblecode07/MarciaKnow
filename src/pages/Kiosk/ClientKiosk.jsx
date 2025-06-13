@@ -180,6 +180,7 @@ const ClientKiosk = () => {
           setBuilding={setBuilding}
           room={room}
           width={'50dvw'}
+          height={'100dvh'}
           panelWidth={'47'}
         />
         <RightSidePanel

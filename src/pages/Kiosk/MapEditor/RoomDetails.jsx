@@ -318,7 +318,7 @@ const RoomDetails = () => {
     }
   }, [buildingID, isEditBuildingMode]);
 
-  console.log(originalBuildingData);
+  console.log(building);
   useEffect(() => {
     if (isEditBuildingMode && originalBuildingData && selectedKiosk) {
       const kioskId = selectedKiosk.kioskID;
@@ -767,29 +767,9 @@ const RoomDetails = () => {
               </div>
             )}
           </div>
-          <div className='flex justify-end gap-[.5rem]'>
-            <button
-              onClick={handleCancel}
-              className='w-[8.359375rem] h-[2.25rem] border-solid border-[1px] border-black text-[.875rem] font-bold cursor-pointer'
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              className='w-[8.359375rem] h-[2.25rem] border-solid border-[1px] border-[#1EAF34] bg-[#D1FAE5] text-[#1EAF34] text-[.875rem] font-bold cursor-pointer'
-            >
-              Submit
-            </button>
-          </div>
         </div>
-
       </div>
       <div className='flex flex-col'>
-        <span className='font-bold font-poppins text-[1.125rem]'>Building Layout Builder</span>
-        <span className='text-sm text-[#4B5563]'>
-          Lorem ipsum
-        </span>
-
         {building.path ? (
           <BuildingLayoutBuilder
             building={{
@@ -808,6 +788,20 @@ const RoomDetails = () => {
           <p>Loading building...</p>
         )}
 
+      </div>
+      <div className='flex justify-end gap-[.5rem]'>
+        <button
+          onClick={handleCancel}
+          className='w-[8.359375rem] h-[2.25rem] border-solid border-[1px] border-black text-[.875rem] font-bold cursor-pointer'
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          className='w-[8.359375rem] h-[2.25rem] border-solid border-[1px] border-[#1EAF34] bg-[#D1FAE5] text-[#1EAF34] text-[.875rem] font-bold cursor-pointer'
+        >
+          Submit
+        </button>
       </div>
     </div>
   );

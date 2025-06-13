@@ -20,15 +20,15 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
    const [scaledBuildingPath, setScaledBuildingPath] = useState(building.path);
    const pathRef = useRef(null);
 
-   const [currentFloor, setCurrentFloor] = useState(1);
-
-   console.log(floors);
+   const [currentFloor, setCurrentFloor] = useState(room?.floor || 1);
 
    // rooms state is now derived from floors[currentFloor]
    const rooms = floors[currentFloor] || [];
 
    const [mode, setMode] = useState("placeRoom"); // or "drawPath"
    const [currentPathPoints, setCurrentPathPoints] = useState([]);
+
+   console.log(room);
 
    const [zoom, setZoom] = useState(1);
    const [panX, setPanX] = useState(0);
@@ -171,6 +171,7 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
          width: GRID_SIZE * 6,
          height: GRID_SIZE * 4,
          label: `Room ${rooms.length + 1}`,
+         description: "",
          color: d3.schemeCategory10[rooms.length % 10],
          floor: currentFloor,
          navigationPath: [],
@@ -395,11 +396,11 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
          height: GRID_SIZE * 6,
          label: `Stairs ${Object.values(buildingElements[currentFloor] || {}).filter(el => el.type === 'stairs').length + 1}`,
          floor: currentFloor,
-         direction: 'up', // 'up' or 'down'
+         direction: 'up',
          createdAt: new Date().toISOString()
       };
 
-      // Add to buildingElements (for rendering)
+      // Update both states simultaneously
       setBuildingElements(prev => {
          const updated = { ...prev };
          const floorElements = updated[currentFloor] || {};
@@ -407,46 +408,76 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
          return updated;
       });
 
-      // Add to floors data structure (for data export)
-      setBuilding((prev) => ({
+      setBuilding(prev => ({
          ...prev,
          stairs: {
             ...prev.stairs,
-            [newStairs.floor]: {
-               ...prev.stairs?.[newStairs.floor],
+            [currentFloor]: {
+               ...prev.stairs?.[currentFloor],
                [newStairs.id]: newStairs
             }
          }
       }));
 
-
       logDataForSchema('STAIRS_ADDED', newStairs);
    };
 
    const updateBuildingElement = (elementId, updates) => {
+      const updatedElement = {
+         ...buildingElements[currentFloor]?.[elementId],
+         ...updates,
+         updatedAt: new Date().toISOString()
+      };
+
+      // Update buildingElements state
       setBuildingElements(prev => {
          const updated = { ...prev };
          const floorElements = { ...updated[currentFloor] };
-         floorElements[elementId] = {
-            ...floorElements[elementId],
-            ...updates,
-            updatedAt: new Date().toISOString()
-         };
+         floorElements[elementId] = updatedElement;
          updated[currentFloor] = floorElements;
          return updated;
       });
+
+      // Update building.stairs state (sync both states)
+      setBuilding(prev => ({
+         ...prev,
+         stairs: {
+            ...prev.stairs,
+            [currentFloor]: {
+               ...prev.stairs?.[currentFloor],
+               [elementId]: updatedElement
+            }
+         }
+      }));
 
       logDataForSchema('BUILDING_ELEMENT_UPDATED', { elementId, updates });
    };
 
    const deleteBuildingElement = (elementId) => {
       const elementToDelete = buildingElements[currentFloor]?.[elementId];
+
+      // Remove from buildingElements state
       setBuildingElements(prev => {
          const updated = { ...prev };
          const floorElements = { ...updated[currentFloor] };
          delete floorElements[elementId];
          updated[currentFloor] = floorElements;
          return updated;
+      });
+
+      // Remove from building.stairs state
+      setBuilding(prev => {
+         const updatedStairs = { ...prev.stairs };
+         if (updatedStairs[currentFloor]) {
+            const floorStairs = { ...updatedStairs[currentFloor] };
+            delete floorStairs[elementId];
+            updatedStairs[currentFloor] = floorStairs;
+         }
+
+         return {
+            ...prev,
+            stairs: updatedStairs
+         };
       });
 
       logDataForSchema('BUILDING_ELEMENT_DELETED', { elementId, deletedElement: elementToDelete });
@@ -696,10 +727,28 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
       logDataForSchema('IMAGE_REMOVED', { roomIndex, imageId });
    };
 
+
+   // Add this useEffect after your existing useEffects
+   useEffect(() => {
+      // Initialize buildingElements from buildingData.stairs when component mounts
+      if (buildingData?.stairs && Object.keys(buildingElements).length === 0) {
+         setBuildingElements(buildingData.stairs);
+      }
+   }, [buildingData]);
+
+   // useEffect(() => {
+   //    if (Object.keys(buildingElements).length > 0) {
+   //       setBuilding(prev => ({
+   //          ...prev,
+   //          stairs: buildingElements
+   //       }));
+   //    }
+   // }, [buildingElements]);
+
    console.log(selectedRoomId)
 
    return (
-      <div className="h-full flex flex-col gap-4" style={{ userSelect: (isDragging || isResizing) ? 'none' : 'auto' }}>
+      <div className="h-full flex flex-col gap-4 font-roboto" style={{ userSelect: (isDragging || isResizing) ? 'none' : 'auto', width: width }}>
 
          {modeType !== import.meta.env.VITE_TEST_KIOSK ?
             <>
@@ -709,14 +758,16 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                      Use the buttons to place rooms and building elements, or switch to path drawing mode to create navigation paths.
                   </p>
                </div>
-               <div className="flex flex-wrap gap-2 items-center p-3 bg-gray-50 rounded">
+               <div className="flex flex-wrap gap-3 items-center p-4 bg-white rounded-lg shadow-sm border border-gray-100">
                   <div className="flex gap-2">
                      <button
                         onClick={() => {
                            setElementMode("room");
                            addRoom();
                         }}
-                        className={`px-3 py-2 text-sm rounded hover:opacity-90 font-medium ${elementMode === "room" ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'
+                        className={`px-4 py-2 text-sm rounded-md hover:opacity-90 font-medium transition-all ${elementMode === "room"
+                           ? 'bg-indigo-600 text-white shadow-sm'
+                           : 'bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100'
                            }`}
                      >
                         + Add Room
@@ -728,25 +779,30 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                               alert("Click inside the building to place stairs");
                            }
                         }}
-                        className={`px-3 py-2 text-sm rounded hover:opacity-90 font-medium ${elementMode === "stairs" ? 'bg-orange-500 text-white' : 'bg-orange-400 text-white'
+                        className={`px-4 py-2 text-sm rounded-md hover:opacity-90 font-medium transition-all ${elementMode === "stairs"
+                           ? 'bg-orange-500 text-white shadow-sm'
+                           : 'bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100'
                            }`}
                      >
                         + Add Stairs
                      </button>
                      <button
                         onClick={() => setMode("drawPath")}
-                        className={`px-3 py-1 text-sm rounded ${mode === "drawPath" ? 'bg-green-500 text-white' : 'bg-white border hover:bg-gray-50'}`}
+                        className={`px-4 py-2 text-sm rounded-md font-medium transition-all ${mode === "drawPath"
+                           ? 'bg-emerald-500 text-white shadow-sm'
+                           : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
+                           }`}
                      >
                         Draw Navigation Path
                      </button>
                   </div>
 
-                  <div className="flex gap-2 items-center">
-                     <label className="text-sm">Floor:</label>
+                  <div className="flex gap-3 items-center">
+                     <label className="text-sm font-medium text-gray-700">Floor:</label>
                      <select
                         value={currentFloor}
                         onChange={(e) => setCurrentFloor(parseInt(e.target.value))}
-                        className="border px-2 py-1 text-sm rounded"
+                        className="border border-gray-200 px-3 py-2 text-sm rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                      >
                         {Object.keys(floors).map((floor) => (
                            <option key={floor} value={floor}>
@@ -755,7 +811,7 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                         ))}
                      </select>
                      <button
-                        className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                        className="px-3 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-medium transition-colors shadow-sm"
                         onClick={addFloor}
                      >
                         + Add Floor
@@ -769,11 +825,11 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                <svg
                   ref={svgRef}
                   viewBox={viewBox}
-                  width={width}
+                  width={'100%'}
                   height={height}
                   onClick={handleSvgClickUpdated}
                   onMouseDown={handleMouseDown}
-                  className={`border bg-white ${mode === "drawPath" ? 'cursor-pointer' :
+                  className={`border border-gray-200 bg-gray-50 rounded-lg shadow-sm ${mode === "drawPath" ? 'cursor-pointer' :
                      elementMode === "stairs" ? 'cursor-crosshair' :
                         isPanning ? 'cursor-grabbing' : 'cursor-grab'
                      }`}
@@ -783,29 +839,39 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                   onWheel={handleWheel}
                   style={{
                      userSelect: 'none',
-                     display: 'block' // Prevents inline spacing issues
+                     display: 'block'
                   }}
                >
-
                   <g transform={`translate(${panX}, ${panY}) scale(${zoom})`}>
-
                   </g>
+
                   {/* Clip the grid inside the building */}
                   <defs>
                      <clipPath id="building-clip">
                         <path d={scaledBuildingPath} />
                      </clipPath>
+                     {/* Add gradient definitions for modern look */}
+                     <linearGradient id="roomGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.1" />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0.3" />
+                     </linearGradient>
+                     <linearGradient id="stairsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.1" />
+                        <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.3" />
+                     </linearGradient>
                   </defs>
 
+                  {/* Building outline with modern styling */}
                   <path
                      ref={pathRef}
                      d={scaledBuildingPath}
-                     fill="#f9fafb"
-                     stroke="#4b5563"
-                     strokeWidth={3}
+                     fill="#ffffff"
+                     stroke="#6b7280"
+                     strokeWidth={2}
+                     filter="drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1))"
                   />
 
-                  {/* Grid lines clipped to building - smaller grid */}
+                  {/* Refined grid lines */}
                   <g clipPath="url(#building-clip)">
                      {Array.from({ length: Math.ceil(1200 / GRID_SIZE) }).map((_, i) => (
                         <line
@@ -814,7 +880,7 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                            y1={-200}
                            x2={i * GRID_SIZE}
                            y2={1000}
-                           stroke="#f0f0f0"
+                           stroke="#f3f4f6"
                            strokeWidth="0.5"
                         />
                      ))}
@@ -825,24 +891,26 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                            y1={i * GRID_SIZE}
                            x2={1200}
                            y2={i * GRID_SIZE}
-                           stroke="#f0f0f0"
+                           stroke="#f3f4f6"
                            strokeWidth="0.5"
                         />
                      ))}
                   </g>
 
-                  {/* Render placed rooms for current floor */}
+                  {/* Modern room rendering */}
                   {rooms.map((room, index) => (
                      <g key={room.id || index}>
-                        {/* Room box */}
+                        {/* Room with modern styling */}
                         <rect
                            x={room.x}
                            y={room.y}
                            width={room.width}
                            height={room.height}
-                           fill={room.color || d3.schemeCategory10[index % 10]}
-                           stroke={selectedRoomIndex === index ? "#2196f3" : "#434949"}
-                           strokeWidth={selectedRoomIndex === index ? 3 : 2}
+                           fill="#6366f1"
+                           fillOpacity="0.1"
+                           stroke={selectedRoomIndex === index ? "#6366f1" : "#d1d5db"}
+                           strokeWidth={selectedRoomIndex === index ? 2 : 1}
+                           rx="4"
                            cursor="move"
                            data-room="true"
                            onMouseDown={(e) => handleRoomMouseDown(e, index)}
@@ -858,56 +926,83 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                               }
                            }}
                         />
-                        {/* Room label */}
+
+                        {/* Room border accent */}
+                        <rect
+                           x={room.x}
+                           y={room.y}
+                           width={room.width}
+                           height={4}
+                           fill="#6366f1"
+                           rx="4"
+                           pointerEvents="none"
+                        />
+
+                        {/* Room label with modern typography */}
                         <text
                            x={room.x + room.width / 2}
-                           y={room.y + room.height / 2 + 4}
-                           fontSize="10"
+                           y={room.y + room.height / 2 + 2}
+                           fontSize="11"
                            textAnchor="middle"
-                           fill="white"
-                           fontWeight="bold"
+                           fill="#374151"
+                           fontWeight="600"
                            pointerEvents="none"
-                           style={{ userSelect: 'none' }}
+                           style={{ userSelect: 'none', whiteSpace: 'pre' }}
                         >
-                           {room.label}
+                           {room.label.split('\n').map((line, i) => (
+                              <tspan key={i} x={room.x + room.width / 2} dy={i === 0 ? 0 : 14}>
+                                 {line}
+                              </tspan>
+                           ))}
                         </text>
 
-                        {/* Resize handle (bottom-right corner) */}
+
+                        {/* Modern resize handle */}
                         {selectedRoomIndex === index && (
-                           <rect
-                              x={room.x + room.width - 6}
-                              y={room.y + room.height - 6}
-                              width={6}
-                              height={6}
-                              fill="#1f2937"
+                           <circle
+                              cx={room.x + room.width - 4}
+                              cy={room.y + room.height - 4}
+                              r="4"
+                              fill="#6366f1"
                               stroke="#ffffff"
-                              strokeWidth="1"
+                              strokeWidth="2"
                               cursor="nwse-resize"
                               data-resize-handle="true"
                               onMouseDown={(e) => handleResizeMouseDown(e, index)}
                            />
                         )}
 
-                        {/* Navigation path */}
+                        {/* Enhanced navigation path */}
                         {selectedRoomId === room.id && room.navigationPath?.length > 1 && (
                            <polyline
                               points={room.navigationPath.map(p => `${p.x},${p.y}`).join(" ")}
                               fill="none"
                               stroke="#10b981"
-                              strokeWidth="8"
-                              strokeDasharray="6,3"
+                              strokeWidth="4"
+                              strokeDasharray="8,4"
+                              strokeLinecap="round"
                               pointerEvents="none"
+                              opacity="0.8"
                            />
                         )}
                      </g>
                   ))}
 
+                  {/* Modern kiosk UI - Fixed to top */}
                   {modeType === import.meta.env.VITE_TEST_KIOSK ?
                      (() => {
-                        const bounds = getViewBoxBounds();
+                        // Get the actual SVG viewport dimensions
+                        const svgElement = svgRef.current;
+                        const viewBoxValues = viewBox.split(' ').map(Number);
+                        const [viewBoxX, viewBoxY, viewBoxWidth, viewBoxHeight] = viewBoxValues;
+
+                        // Calculate top-left position in viewBox coordinates
+                        const topX = viewBoxX + 16; // 16px from left edge
+                        const topY = viewBoxY + 16; // 16px from top edge
+
                         return (
                            <g className="floating-ui">
-                              {/* Back Button */}
+                              {/* Modern Back Button - Fixed to top */}
                               <g
                                  onClick={(e) => {
                                     e.stopPropagation();
@@ -917,29 +1012,30 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                                  style={{ cursor: 'pointer' }}
                               >
                                  <rect
-                                    x={bounds.x + 20}
-                                    y={bounds.y + 20}
+                                    x={topX}
+                                    y={topY}
                                     width={80}
-                                    height={30}
-                                    rx={0} // Removed rounding
-                                    fill="transparent" // Black fill
-                                    stroke="#111111" // Dark stroke
+                                    height={36}
+                                    rx="8"
+                                    fill="#ffffff"
+                                    stroke="#e5e7eb"
                                     strokeWidth="1"
+                                    filter="drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))"
                                  />
                                  <text
-                                    x={bounds.x + 60}
-                                    y={bounds.y + 40}
+                                    x={topX + 40}
+                                    y={topY + 22}
                                     fontSize="12"
                                     textAnchor="middle"
-                                    fill="black"
-                                    fontWeight="bold"
+                                    fill="#374151"
+                                    fontWeight="600"
                                     pointerEvents="none"
                                  >
                                     ← Back
                                  </text>
                               </g>
 
-                              {/* Floor Dropdown */}
+                              {/* Modern Floor Dropdown - Fixed to top */}
                               <g
                                  onClick={(e) => {
                                     e.stopPropagation();
@@ -948,30 +1044,30 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                                  style={{ cursor: 'pointer' }}
                               >
                                  <rect
-                                    x={bounds.x + 120}
-                                    y={bounds.y + 20}
+                                    x={topX + 92}
+                                    y={topY}
                                     width={100}
-                                    height={30}
-                                    rx={0} // Removed rounding
-                                    fill="transparent"
-                                    stroke="#111111"
+                                    height={36}
+                                    rx="8"
+                                    fill="#ffffff"
+                                    stroke="#e5e7eb"
                                     strokeWidth="1"
+                                    filter="drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))"
                                  />
                                  <text
-                                    x={bounds.x + 170}
-                                    y={bounds.y + 40}
+                                    x={topX + 142}
+                                    y={topY + 22}
                                     fontSize="12"
                                     textAnchor="middle"
-                                    fill="black"
-                                    fontWeight="bold"
+                                    fill="#374151"
+                                    fontWeight="600"
                                     pointerEvents="none"
                                  >
                                     Floor {currentFloor} ▼
                                  </text>
                               </g>
 
-
-                              {/* Dropdown Menu */}
+                              {/* Modern Dropdown Menu - Fixed to top */}
                               {showFloorDropdown && (
                                  <g>
                                     {Object.keys(floors).map((floor, index) => (
@@ -985,20 +1081,22 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                                           style={{ cursor: 'pointer' }}
                                        >
                                           <rect
-                                             x={bounds.x + 120}
-                                             y={bounds.y + 55 + (index * 25)}
+                                             x={topX + 92}
+                                             y={topY + 40 + (index * 32)}
                                              width={100}
-                                             height={25}
-                                             fill={parseInt(floor) === currentFloor ? "#dbeafe" : "white"}
+                                             height={32}
+                                             rx={index === Object.keys(floors).length - 1 ? "0 0 8 8" : "0"}
+                                             fill={parseInt(floor) === currentFloor ? "#f0f9ff" : "#ffffff"}
                                              stroke="#e5e7eb"
                                              strokeWidth="1"
                                           />
                                           <text
-                                             x={bounds.x + 170}
-                                             y={bounds.y + 70 + (index * 25)}
+                                             x={topX + 142}
+                                             y={topY + 60 + (index * 32)}
                                              fontSize="11"
                                              textAnchor="middle"
-                                             fill="#374151"
+                                             fill={parseInt(floor) === currentFloor ? "#0369a1" : "#6b7280"}
+                                             fontWeight={parseInt(floor) === currentFloor ? "600" : "500"}
                                              pointerEvents="none"
                                           >
                                              Floor {floor}
@@ -1012,20 +1110,22 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                      })()
                      : null}
 
-                  {/* Render building elements for current floor */}
+                  {/* Modern stairs rendering */}
                   {Object.entries(buildingElements[currentFloor] || {}).map(([elementId, element]) => (
                      <g key={elementId}>
                         {element.type === 'stairs' && (
                            <>
-                              {/* Stairs background */}
+                              {/* Modern stairs background */}
                               <rect
                                  x={element.x}
                                  y={element.y}
                                  width={element.width}
                                  height={element.height}
-                                 fill="#8b5cf6"
-                                 stroke={selectedElementIndex === elementId ? "#2196f3" : "#6d28d9"}
-                                 strokeWidth={selectedElementIndex === elementId ? 3 : 2}
+                                 fill="#f59e0b"
+                                 fillOpacity="0.15"
+                                 stroke={selectedElementIndex === elementId ? "#f59e0b" : "#d1d5db"}
+                                 strokeWidth={selectedElementIndex === elementId ? 2 : 1}
+                                 rx="4"
                                  cursor="move"
                                  data-element="true"
                                  onMouseDown={(e) => handleElementMouseDown(e, elementId)}
@@ -1037,36 +1137,51 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                                     }
                                  }}
                               />
-                              {/* Stairs steps */}
-                              {Array.from({ length: 6 }).map((_, i) => (
+
+                              {/* Stairs accent */}
+                              <rect
+                                 x={element.x}
+                                 y={element.y}
+                                 width={element.width}
+                                 height={4}
+                                 fill="#f59e0b"
+                                 rx="4"
+                                 pointerEvents="none"
+                              />
+
+                              {/* Modern stairs steps */}
+                              {Array.from({ length: 5 }).map((_, i) => (
                                  <line
                                     key={i}
-                                    x1={element.x + 2}
-                                    y1={element.y + (i + 1) * (element.height / 7)}
-                                    x2={element.x + element.width - 2}
-                                    y2={element.y + (i + 1) * (element.height / 7)}
-                                    stroke="#ffffff"
-                                    strokeWidth="1"
+                                    x1={element.x + 8}
+                                    y1={element.y + 12 + (i * (element.height - 16) / 5)}
+                                    x2={element.x + element.width - 8}
+                                    y2={element.y + 12 + (i * (element.height - 16) / 5)}
+                                    stroke="#f59e0b"
+                                    strokeWidth="1.5"
+                                    strokeOpacity="0.6"
                                     pointerEvents="none"
                                  />
                               ))}
-                              {/* Direction arrow */}
+
+                              {/* Modern direction arrow */}
                               <polygon
                                  points={element.direction === 'up'
-                                    ? `${element.x + element.width / 2},${element.y + 5} ${element.x + element.width / 2 - 5},${element.y + 15} ${element.x + element.width / 2 + 5},${element.y + 15}`
-                                    : `${element.x + element.width / 2},${element.y + element.height - 5} ${element.x + element.width / 2 - 5},${element.y + element.height - 15} ${element.x + element.width / 2 + 5},${element.y + element.height - 15}`
+                                    ? `${element.x + element.width / 2},${element.y + 8} ${element.x + element.width / 2 - 4},${element.y + 16} ${element.x + element.width / 2 + 4},${element.y + 16}`
+                                    : `${element.x + element.width / 2},${element.y + element.height - 8} ${element.x + element.width / 2 - 4},${element.y + element.height - 16} ${element.x + element.width / 2 + 4},${element.y + element.height - 16}`
                                  }
-                                 fill="white"
+                                 fill="#f59e0b"
                                  pointerEvents="none"
                               />
-                              {/* Stairs label */}
+
+                              {/* Modern stairs label */}
                               <text
                                  x={element.x + element.width / 2}
                                  y={element.y + element.height - 8}
-                                 fontSize="8"
+                                 fontSize="10"
                                  textAnchor="middle"
-                                 fill="white"
-                                 fontWeight="bold"
+                                 fill="#92400e"
+                                 fontWeight="600"
                                  pointerEvents="none"
                                  style={{ userSelect: 'none' }}
                               >
@@ -1077,42 +1192,44 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                      </g>
                   ))}
 
-                  {/* Current path being drawn */}
+                  {/* Modern path drawing */}
                   {mode === "drawPath" && currentPathPoints.length > 0 && (
                      <polyline
                         points={currentPathPoints.map(p => `${p.x},${p.y}`).join(" ")}
                         fill="none"
-                        stroke="#f59e0b"
-                        strokeWidth="2"
-                        strokeDasharray="4,2"
+                        stroke="#8b5cf6"
+                        strokeWidth="3"
+                        strokeDasharray="6,3"
+                        strokeLinecap="round"
                         pointerEvents="none"
+                        opacity="0.8"
                      />
                   )}
                </svg>
 
-               {/* Path controls */}
+               {/* Modern path controls */}
                {mode === "drawPath" && selectedRoomIndex !== null && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-                     <p className="text-sm text-yellow-800 mb-2">
-                        Click inside the building to add points to the navigation path for {rooms[selectedRoomIndex]?.label}
+                  <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg shadow-sm">
+                     <p className="text-sm text-purple-800 mb-3 font-medium">
+                        Click inside the building to add points to the navigation path for <span className="font-semibold">{rooms[selectedRoomIndex]?.label}</span>
                      </p>
                      <div className="flex gap-2">
                         {currentPathPoints.length > 0 && (
                            <button
-                              className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                              className="px-4 py-2 text-sm bg-emerald-500 text-white rounded-md hover:bg-emerald-600 font-medium transition-colors shadow-sm"
                               onClick={saveNavigationPath}
                            >
                               Save Path ({currentPathPoints.length} points)
                            </button>
                         )}
                         <button
-                           className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+                           className="px-4 py-2 text-sm bg-gray-500 text-white rounded-md hover:bg-gray-600 font-medium transition-colors shadow-sm"
                            onClick={() => setCurrentPathPoints([])}
                         >
                            Clear Path
                         </button>
                         <button
-                           className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                           className="px-4 py-2 text-sm bg-indigo-500 text-white rounded-md hover:bg-indigo-600 font-medium transition-colors shadow-sm"
                            onClick={() => setMode("placeRoom")}
                         >
                            Exit Path Mode
@@ -1149,24 +1266,15 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                            <label className="block text-sm font-medium text-blue-700">
                               Room Label:
                            </label>
-                           <input
+                           <textarea
                               type="text"
                               className="border border-blue-300 px-2 py-1 text-sm mt-1 rounded"
                               value={rooms[selectedRoomIndex].label}
                               onChange={(e) => updateRoom(selectedRoomIndex, { label: e.target.value })}
-                           />
+                           >
+                           </textarea>
                         </div>
-                        <div>
-                           <label className="block text-sm font-medium text-blue-700">
-                              Color:
-                           </label>
-                           <input
-                              type="color"
-                              className="border border-blue-300 px-1 py-1 text-sm mt-1 rounded w-12 h-8"
-                              value={rooms[selectedRoomIndex].color || "#3b82f6"}
-                              onChange={(e) => updateRoom(selectedRoomIndex, { color: e.target.value })}
-                           />
-                        </div>
+
                         <div>
                            <label className="block text-sm font-medium text-blue-700">
                               Size:
@@ -1198,10 +1306,18 @@ export default function BuildingLayoutBuilder({ building = { path: "M 50 50 L 45
                            Delete Room
                         </button>
                      </div>
-
+                     <span className='text-[1rem]'>
+                        Room Description
+                     </span>
+                     <textarea
+                        placeholder={'Enter the room description here...'}
+                        className='w-[36.25dvw] flex items-center text-[.875rem] border-solid border-[1px] border-black p-[1rem] outline-none'
+                        onChange={(e) => updateRoom(selectedRoomIndex, { description: e.target.value })}
+                        value={rooms[selectedRoomIndex]?.description || ''}
+                     />
                      {/* Image Upload Section */}
                      <div className="border-t border-blue-200 pt-3">
-                        <h4 className="font-medium text-blue-800 mb-2">
+                        <h4 className="font-medium text-black mb-2">
                            Room Images ({(rooms[selectedRoomIndex].images || []).length})
                         </h4>
 

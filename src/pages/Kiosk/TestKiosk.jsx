@@ -233,6 +233,8 @@ const TestKiosk = () => {
         kiosksData={kiosksData}
         room={room}
         panelWidth={'36.8125'}
+        width={'80%'}
+        height={'96%'}
       />
       <RightSidePanel
         kiosk={kiosk}
