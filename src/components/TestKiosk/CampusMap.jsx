@@ -281,7 +281,7 @@ const CampusMap = ({
    return (
       <section
          className="relative flex flex-col gap-[1rem]"
-         style={{ height: mode === import.meta.env.VITE_ADD_ROOM ? '100%' : undefined }}
+         style={{ height: (mode === import.meta.env.VITE_ADD_ROOM || mode === import.meta.env.VITE_ADD_KIOSK || mode === import.meta.env.VITE_EDIT_KIOSK) ? '100%' : undefined }}
       >
 
          {viewMode === 'campus' && (
