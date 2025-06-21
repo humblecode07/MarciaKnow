@@ -230,65 +230,62 @@ const MapEditor = () => {
                 </div>
               </div>
 
-              {expandedBuildings[buildingId] && (
-                <div className="border-t border-gray-200 p-4">
-                  {/* Render tabs */}
-                  {tabs.length > 0 ? (
-                    <>
-                      <div className="flex">
-                        {tabs.map((tab) => (
-                          <button
-                            key={tab}
-                            onClick={() => setActiveTab(buildingId, tab)}
-                            className={`px-4 py-2 border-solid border-b-[2px] ${activeTab === tab ? 'text-[#4353ff] border-[#4353ff]' : 'border-[#eee]'}`}
-                          >
-                            {getKioskNameById(tab)}
-                          </button>
-                        ))}
 
-                      </div>
+            {Object.keys(building.rooms).length > 0 ?  
+              (expandedBuildings[buildingId] && (
+                <div className="border-t border-gray-200 px-6 py-4">
+                  {/* Floor Tabs */}
+                  <div className="flex space-x-2 mb-4 border-b border-gray-300">
+                    {Object.keys(building.rooms || {})
+                      .sort((a, b) => a - b)
+                      .map((floor) => (
+                        <button
+                          key={floor}
+                          onClick={() => setActiveTab(buildingId, floor)}
+                          className={`px-4 py-2 text-sm font-medium border-b-2 ${currentActiveTabsByBuilding[buildingId] === floor
+                              ? 'border-blue-600 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-blue-600'
+                            }`}
+                        >
+                          Floor {floor}
+                        </button>
+                      ))}
+                  </div>
 
-                      <div className="mt-4">
-                        {building.existingRoom[activeTab]?.map((room) => (
-                          <div key={room._id} className='flex flex-col gap-[1.375rem] p-[1rem] bg-[#FBF9F6] shadow-md'>
-                            <div className='flex flex-col gap-[0.4375rem]'>
-                              <div className='flex justify-between'>
-                                <span className='font-bold'>{room?.name}</span>
-                                <div className='flex gap-[2rem]'>
-                                  <button
-                                    onClick={() => handleShowRoom(room, building, activeTab)}
-                                    className='flex items-center gap-[0.75rem]'
-                                  >
-                                    <ShowIconTwo />
-                                    <span className='text-[#110D79] text-[.875rem]'>Show</span>
-                                  </button>
-                                  <NavLink
-                                    to={`${building._id}/edit-room/${activeTab}/${room._id}`}
-                                    className='flex items-center gap-[0.75rem]'
-                                  >
-                                    <EditIcon />
-                                    <span className='text-[#1EAF34] text-[.875rem]'>Edit</span>
-                                  </NavLink>
-                                  <button
-                                    onClick={(e) => handleRoomDelete(e, building._id, room.name, room.floor)}
-                                    className='flex items-center gap-[0.75rem] cursor-pointer transition-all duration-300 ease-in-out hover:scale-105 hover:text-[#991515]'
-                                  >
-                                    <DeleteIcon />
-                                    <span className='text-[#AF1E1E] text-[.875rem]'>Delete</span>
-                                  </button>
-                                </div>
-                              </div>
-                              <span className='text-[#4B5563] font-light'>Floor {room.floor}</span>
-                            </div>
+                  {/* Active Floor's Rooms */}
+                  <div className="space-y-2">
+                    {(building.rooms?.[currentActiveTabsByBuilding[buildingId]] || []).map((room) => (
+                      <div
+                        key={room._id || room.id}
+                        className="border border-gray-300 rounded-lg p-4 shadow-sm hover:shadow-md transition"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="text-base font-semibold text-gray-800">{room.label}</h4>
+                            <p className="text-sm text-gray-500">Floor {room.floor}</p>
+                            {room.coordinates && (
+                              <p className="text-sm text-gray-400">{room.coordinates}</p>
+                            )}
                           </div>
-                        ))}
+
+                          {room.color && (
+                            <div
+                              className="w-4 h-4 rounded-full"
+                              style={{ backgroundColor: room.color }}
+                              title={`Color: ${room.color}`}
+                            />
+                          )}
+                        </div>
                       </div>
-                    </>
-                  ) : (
-                    <p>No rooms available for this building.</p>
-                  )}
+                    ))}
+                  </div>
                 </div>
-              )}
+              )) : 
+              (expandedBuildings[buildingId] && (<div className="text-sm text-gray-500 italic pb-10 text-center">No rooms available for this building. Click Edit to add data.</div>))
+              }
+
+
+
             </div>
           )
         })}
